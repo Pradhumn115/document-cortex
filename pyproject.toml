@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "document-cortex"
+version = "0.1.0"
+description = "Put in any document (PDF, scans, handwriting, DOCX, text; any language) and ask anything about it, with checked citations."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.24",
+  "torch>=2.1",
+  "transformers>=4.44",
+  "huggingface_hub>=0.24",
+  "openai>=1.40",
+  "pymupdf>=1.24",
+  "python-docx>=1.1",
+  "pytesseract>=0.3.10",
+  "pillow>=10",
+  "fastapi>=0.110",
+  "uvicorn>=0.29",
+  "python-multipart>=0.0.9",
+  "pydantic>=2",
+]
+
+[project.optional-dependencies]
+anthropic = ["anthropic>=0.40"]
+surya = ["surya-ocr>=0.17"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+cortex = "cortex.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["cortex*"]
+
+[tool.setuptools.package-data]
+cortex = ["static/*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

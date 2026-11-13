@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Document Cortex</title>
+<style>
+/* Layout: library sidebar | conversation | source drawer. Index-card motif for sources. */
+:root{
+  --bg:#f3f5f4; --panel:#ffffff; --ink:#15201d; --muted:#5b6964; --line:#d9e0dd; --soft:#e8eeeb;
+  --accent:#0f6b5c; --accent-ink:#ffffff; --accent-soft:#dcefe9;
+  --cite:#8a5a00; --cite-soft:#fbefd2; --warn:#a33a2a; --warn-soft:#fbe3df; --ok:#226b3a; --ok-soft:#e0f1e5;
+  --card:#fbfbf8; --rule:#cfe0ea;
+  --serif:"Charter","Iowan Old Style","Source Serif Pro","Noto Serif","Noto Serif Devanagari",Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI","Noto Sans","Noto Sans Devanagari",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0e1412; --panel:#151d1a; --ink:#e3ece8; --muted:#97a7a1; --line:#28342f; --soft:#1c2622;
+  --accent:#4fc2a6; --accent-ink:#06201a; --accent-soft:#17312a;
+  --cite:#f0c060; --cite-soft:#33280f; --warn:#f08a78; --warn-soft:#3a1d18; --ok:#7bd193; --ok-soft:#17301f;
+  --card:#18211e; --rule:#24384a; color-scheme:dark;}}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--sans)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{display:grid;grid-template-columns:300px minmax(0,1fr);height:100%}
+.app.drawer-open{grid-template-columns:300px minmax(0,1fr) 440px}
+
+/* sidebar */
+aside.lib{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.brand{padding:18px 18px 10px;display:flex;align-items:baseline;gap:8px}
+.brand h1{font:600 19px/1.1 var(--serif);margin:0;letter-spacing:.01em}
+.brand small{color:var(--muted);font-size:12px}
+.drop{margin:6px 14px 10px;border:1.5px dashed var(--line);border-radius:10px;padding:14px;text-align:center;color:var(--muted);font-size:13px;background:var(--soft)}
+.drop b{color:var(--ink)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft);color:var(--ink)}
+.drop input{display:none}
+.lib-head{display:flex;justify-content:space-between;align-items:center;padding:4px 18px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.lib-head button{background:none;border:0;color:var(--accent);font-size:12px;text-transform:none;letter-spacing:0;padding:2px 4px}
+.docs{list-style:none;margin:0;padding:4px 8px 12px;overflow:auto;flex:1}
+.doc{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:8px;align-items:start;padding:9px 10px;border-radius:8px}
+.doc:hover{background:var(--soft)}
+.doc input{margin-top:3px;accent-color:var(--accent)}
+.doc .name{font-weight:550;font-size:14px;overflow-wrap:anywhere}
+.doc .sub{color:var(--muted);font-size:12px;display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.pill{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.pill.ready{background:var(--ok-soft);color:var(--ok)} .pill.processing,.pill.queued{background:var(--accent-soft);color:var(--accent)}
+.pill.error{background:var(--warn-soft);color:var(--warn)} .pill.partial{background:var(--cite-soft);color:var(--cite)}
+.bar{height:4px;background:var(--soft);border-radius:4px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .4s}
+.doc .msg{font-size:12px;color:var(--muted);margin-top:3px;overflow-wrap:anywhere}
+.doc .acts{display:flex;gap:2px;opacity:0;transition:opacity .15s}
+.doc:hover .acts,.doc:focus-within .acts{opacity:1}
+.icon{background:none;border:0;border-radius:6px;padding:3px 6px;color:var(--muted);font-size:13px}
+.icon:hover{background:var(--line);color:var(--ink)}
+.foot{border-top:1px solid var(--line);padding:10px 16px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+.foot button{align-self:flex-start;background:none;border:1px solid var(--line);border-radius:6px;padding:3px 9px;font-size:12px}
+
+/* main */
+main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.scope{padding:14px 28px;border-bottom:1px solid var(--line);color:var(--muted);font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--bg)}
+.scope b{color:var(--ink);font-weight:550}
+.thread{flex:1;overflow:auto;padding:24px 28px 12px}
+.inner{max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+.empty{max-width:560px;margin:8vh auto 0;text-align:center;color:var(--muted)}
+.empty h2{font:500 26px/1.25 var(--serif);color:var(--ink);margin:0 0 8px;text-wrap:balance}
+.suggest{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:18px}
+.suggest button{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:13px;text-align:left}
+.suggest button:hover{border-color:var(--accent)}
+.q{align-self:flex-end;max-width:85%;background:var(--accent);color:var(--accent-ink);padding:10px 15px;border-radius:14px 14px 4px 14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.a{display:flex;flex-direction:column;gap:12px}
+.a .body{font:16.5px/1.65 var(--serif);overflow-wrap:anywhere}
+.a .body p{margin:.5em 0} .a .body ul,.a .body ol{margin:.4em 0;padding-left:1.4em} .a .body li{margin:.2em 0}
+.a .body h3,.a .body h4{font:600 16px var(--sans);margin:1em 0 .3em}
+.a .body code{font:13px var(--mono);background:var(--soft);padding:1px 5px;border-radius:4px}
+.a .body pre{font:13px/1.5 var(--mono);background:var(--soft);padding:12px;border-radius:8px;overflow:auto}
+.a .body table{border-collapse:collapse;font:14px var(--sans);display:block;overflow:auto}
+.a .body td,.a .body th{border:1px solid var(--line);padding:4px 8px}
+.cite{font:600 11px var(--sans);background:var(--cite-soft);color:var(--cite);border:0;border-radius:5px;padding:1px 5px;margin:0 1px;vertical-align:2px}
+.cite:hover{filter:brightness(.95);text-decoration:underline}
+.flag{font:600 12px var(--sans);color:var(--warn);background:var(--warn-soft);border-radius:5px;padding:1px 6px;white-space:nowrap}
+.meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted)}
+.check{display:inline-flex;gap:6px;align-items:center;border-radius:999px;padding:3px 10px;background:var(--ok-soft);color:var(--ok);font-weight:550}
+.check.warn{background:var(--cite-soft);color:var(--cite)} .check.bad{background:var(--warn-soft);color:var(--warn)}
+.route{border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+.fb{margin-left:auto;display:flex;gap:4px}
+.fb button{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:2px 9px}
+.fb button.on{border-color:var(--accent);background:var(--accent-soft)}
+.sources{display:grid;gap:6px}
+.src{display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.src:hover{border-color:var(--accent)}
+.src .n{font:600 12px var(--sans);color:var(--cite);background:var(--cite-soft);border-radius:5px;height:20px;display:grid;place-items:center}
+.src .p{font-size:13px;overflow-wrap:anywhere} .src .p small{color:var(--muted);display:block}
+.src.flash{animation:flash 1s}
+@keyframes flash{from{background:var(--cite-soft)}}
+.thinking{color:var(--muted);font-style:italic;display:flex;gap:8px;align-items:center}
+.dots::after{content:"…";animation:dots 1.2s steps(3) infinite;display:inline-block;width:1.2em;overflow:hidden;vertical-align:bottom}
+@keyframes dots{from{width:0}to{width:1.2em}}
+.err{color:var(--warn);background:var(--warn-soft);padding:10px 12px;border-radius:8px;font-size:14px}
+.composer{padding:14px 28px 18px;border-top:1px solid var(--line);background:var(--bg)}
+.box{max-width:780px;margin:0 auto;display:flex;gap:10px;align-items:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 8px 8px 14px}
+.box:focus-within{border-color:var(--accent)}
+.box textarea{flex:1;border:0;outline:0;resize:none;background:transparent;color:var(--ink);font:15px/1.5 var(--sans);max-height:200px;padding:6px 0}
+.send{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:8px 16px;font-weight:600}
+.send:disabled{opacity:.5;cursor:default}
+.opts{max-width:780px;margin:6px auto 0;display:flex;gap:14px;font-size:12px;color:var(--muted)}
+.opts label{display:flex;gap:5px;align-items:center}
+
+/* drawer */
+aside.drawer{display:none;background:var(--panel);border-left:1px solid var(--line);min-height:0;flex-direction:column}
+.drawer-open aside.drawer{display:flex}
+.dhead{display:flex;align-items:center;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:2px;flex:1}
+.tabs button{background:none;border:0;border-radius:6px;padding:5px 10px;font-size:13px;color:var(--muted)}
+.tabs button.on{background:var(--soft);color:var(--ink);font-weight:550}
+.dbody{overflow:auto;padding:16px 18px 30px;flex:1}
+.path{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.dtitle{font:600 18px/1.3 var(--serif);margin:4px 0 2px;overflow-wrap:anywhere}
+.cardbox{margin:12px 0;background:var(--card);border:1px solid var(--line);border-top:3px solid #c4555a;border-radius:4px;padding:10px 12px;font-size:13px}
+.cardbox b{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cardbox ul{margin:4px 0;padding-left:1.2em}
+.srctext{white-space:pre-wrap;font:14.5px/1.65 var(--serif);overflow-wrap:anywhere}
+.tree{list-style:none;padding-left:0;margin:6px 0;font-size:13.5px}
+.tree ul{list-style:none;padding-left:16px;margin:0;border-left:1px solid var(--line)}
+.tree button{background:none;border:0;padding:3px 6px;border-radius:5px;text-align:left;width:100%;display:flex;justify-content:space-between;gap:8px}
+.tree button:hover{background:var(--soft)}
+.tree small{color:var(--muted);white-space:nowrap}
+.proc{border:1px solid var(--line);border-radius:10px;background:var(--panel);font:13px/1.45 var(--sans)}
+.proc>summary{list-style:none;cursor:pointer;padding:8px 12px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.proc>summary::-webkit-details-marker{display:none}
+.proc>summary::before{content:"▸";font-size:11px;transition:transform .15s}
+.proc[open]>summary::before{transform:rotate(90deg)}
+.proc>summary b{color:var(--ink);font-weight:550}
+.steps{list-style:none;margin:0;padding:2px 12px 10px 14px;display:flex;flex-direction:column;gap:7px}
+.st{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:8px;align-items:start}
+.st .ic{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:10px;margin-top:1px;background:var(--ok-soft);color:var(--ok)}
+.st.run .ic{background:none;border:2px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.st .tt{color:var(--ink);overflow-wrap:anywhere} .st .dd{color:var(--muted);margin-top:1px;overflow-wrap:anywhere}
+.st ul{margin:3px 0 0;padding-left:14px;color:var(--muted);font-size:12.5px} .st li{margin:1px 0;overflow-wrap:anywhere}
+.st .ms{color:var(--muted);font:11.5px var(--mono);white-space:nowrap}
+.st.k-check .ic{background:var(--cite-soft);color:var(--cite)} .st.k-route .ic{background:var(--accent-soft);color:var(--accent)}
+.tl{list-style:none;margin:10px 0;padding:0;border-left:2px solid var(--line)}
+.tl li{position:relative;padding:4px 0 8px 14px;font-size:13.5px;overflow-wrap:anywhere}
+.tl li::before{content:"";position:absolute;left:-6px;top:9px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.tl li:last-child.live::before{animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.tl small{color:var(--muted);font:11.5px var(--mono);margin-right:6px}
+.banner{background:var(--cite-soft);color:var(--cite);padding:8px 14px;font-size:13px;border-bottom:1px solid var(--line)}
+@media (max-width:1100px){.app.drawer-open{grid-template-columns:260px minmax(0,1fr)} .drawer-open aside.drawer{position:fixed;inset:0 0 0 auto;width:min(440px,100vw);z-index:5;box-shadow:-8px 0 30px rgba(0,0,0,.18)}}
+@media (max-width:760px){.app,.app.drawer-open{grid-template-columns:1fr} aside.lib{max-height:38vh;border-right:0;border-bottom:1px solid var(--line)} .thread,.composer,.scope{padding-left:14px;padding-right:14px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="lib">
+    <div class="brand"><h1>Document Cortex</h1><small id="ver"></small></div>
+    <label class="drop" id="drop" tabindex="0">
+      <input type="file" id="file" multiple accept=".pdf,.docx,.md,.markdown,.txt,.rst,.png,.jpg,.jpeg,.tif,.tiff,.webp,.bmp">
+      <b>Add documents</b><br>Drop files here or click. PDF (scanned too), DOCX, Markdown, text, images.
+    </label>
+    <div class="lib-head"><span>Library</span><button id="selAll" type="button">Ask all</button></div>
+    <ul class="docs" id="docs"></ul>
+    <div class="foot">
+      <span id="home"></span>
+      <button id="learn" type="button" title="Add questions you rated 👍 to the cards that answered them">Learn from 👍 answers</button>
+    </div>
+  </aside>
+
+  <main>
+    <div id="keyBanner" class="banner" hidden>No Groq API key found. Put GROQ_API_KEY=… in ~/.cortex/.env and restart.</div>
+    <div class="scope" id="scope"></div>
+    <div class="thread" id="thread"><div class="inner" id="inner"></div></div>
+    <div class="composer">
+      <form class="box" id="form">
+        <textarea id="q" rows="1" placeholder="Ask anything about your documents…" aria-label="Question"></textarea>
+        <button class="send" id="send" type="submit">Ask</button>
+      </form>
+      <div class="opts"><label><input type="checkbox" id="verify" checked> Check citations</label><span>Enter to ask · Shift+Enter for a new line</span></div>
+    </div>
+  </main>
+
+  <aside class="drawer" id="drawer">
+    <div class="dhead">
+      <div class="tabs"><button id="tabSrc" class="on" type="button">Source</button><button id="tabOut" type="button">Outline</button><button id="tabProc" type="button">Process</button></div>
+      <button class="icon" id="close" type="button" aria-label="Close panel">✕</button>
+    </div>
+    <div class="dbody" id="dbody"></div>
+  </aside>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let docs = [], selected = new Set(), lastSrc = null, outlineDoc = null, busy = false;
+try { selected = new Set(JSON.parse(localStorage.getItem("cortex.sel") || "[]")); } catch {}
+const saveSel = () => { try { localStorage.setItem("cortex.sel", JSON.stringify([...selected])); } catch {} };
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, opts);
+  if (!r.ok) { let m = r.statusText; try { m = (await r.json()).detail || m; } catch {} throw new Error(m); }
+  return r.json();
+}
+
+/* ---------- library ---------- */
+const pages = p => !p ? "" : (p[0] === p[1] ? `p. ${p[0]}` : `p. ${p[0]}–${p[1]}`);
+function renderDocs() {
+  const ul = $("#docs");
+  if (!docs.length) { ul.innerHTML = `<li class="doc" style="grid-template-columns:1fr;color:var(--muted);font-size:13px">No documents yet.</li>`; renderScope(); return; }
+  ul.innerHTML = docs.map(d => {
+    const st = d.status || "queued", ready = st === "ready" || st === "partial";
+    const ocr = d.ocr ? `<span class="pill" title="${esc(d.ocr.engine)}">OCR ${d.ocr.pages}p</span>` : "";
+    const prog = (st === "processing" || st === "queued") ? `<div class="bar"><i style="width:${Math.round((d.progress||0)*100)}%"></i></div><div class="msg">${esc(d.message||"")}</div>` : "";
+    const err = st === "error" ? `<div class="msg" style="color:var(--warn)">${esc(d.message)}</div>` : (st === "partial" ? `<div class="msg">${esc(d.message)}</div>` : "");
+    return `<li class="doc">
+      <input type="checkbox" ${ready ? "" : "disabled"} ${selected.has(d.slug) ? "checked" : ""} data-sel="${esc(d.slug)}" aria-label="Include ${esc(d.name)}">
+      <div><div class="name">${esc(d.name || d.slug)}</div>
+        <div class="sub"><span class="pill ${st}">${st}</span>${d.cards ? `<span>${d.cards} sections</span>` : ""}${ocr}</div>${prog}${err}</div>
+      <div class="acts"><button class="icon" data-proc="${esc(d.slug)}" title="How this document was processed" aria-label="Processing steps">⚙︎</button>${ready ? `<button class="icon" data-out="${esc(d.slug)}" title="Outline" aria-label="Outline">☰</button>` : ""}<button class="icon" data-del="${esc(d.slug)}" title="Remove" aria-label="Remove">🗑</button></div>
+    </li>`;
+  }).join("");
+  renderScope();
+}
+function readyDocs() { return docs.filter(d => d.status === "ready" || d.status === "partial"); }
+function scopeDocs() { const r = readyDocs(); const s = r.filter(d => selected.has(d.slug)); return s.length ? s : r; }
+function renderScope() {
+  const r = readyDocs(), s = scopeDocs();
+  $("#scope").innerHTML = !r.length ? "Add a document to start." :
+    (s.length === r.length ? `Asking <b>all ${r.length} document${r.length > 1 ? "s" : ""}</b>` :
+     `Asking <b>${s.map(d => esc(d.name)).join("</b>, <b>")}</b>`) + ` <span>· tick documents in the library to narrow it</span>`;
+  if (!$("#inner").children.length || $("#inner").querySelector(".empty")) renderEmpty();
+}
+function renderEmpty() {
+  const r = readyDocs();
+  const ex = r.slice(0, 3).flatMap(d => [`Summarize ${d.name}`]);
+  $("#inner").innerHTML = `<div class="empty">
+    <h2>${r.length ? "Ask anything about your documents" : "Put in a document, then ask anything about it"}</h2>
+    <p>${r.length ? "Answers cite the exact section and page, and every citation is checked against its source." :
+      "Drop a PDF, a scanned book, handwritten notes, a Word file or plain text on the left. It is read, organised into sections with index cards, and indexed."}</p>
+    ${ex.length ? `<div class="suggest">${ex.map(e => `<button type="button" data-ask="${esc(e)}">${esc(e)}</button>`).join("")}</div>` : ""}
+  </div>`;
+}
+async function loadDocs() {
+  try { docs = await api("/api/docs"); } catch { return; }
+  const live = new Set(docs.map(d => d.slug)); selected = new Set([...selected].filter(s => live.has(s))); saveSel();
+  renderDocs();
+  if (procDoc && $("#app").classList.contains("drawer-open")) showProcess(procDoc);
+  clearTimeout(loadDocs.t);
+  loadDocs.t = setTimeout(loadDocs, docs.some(d => d.status === "processing" || d.status === "queued") ? 1500 : 8000);
+}
+async function upload(files) {
+  if (!files.length) return;
+  const fd = new FormData(); [...files].forEach(f => fd.append("files", f));
+  try { await api("/api/docs", {method: "POST", body: fd}); } catch (e) { alertInline(e.message); }
+  loadDocs();
+}
+function alertInline(msg) { const d = document.createElement("div"); d.className = "err"; d.textContent = msg; $("#inner").appendChild(d); }
+
+/* ---------- markdown (escaped first, then a small safe subset) ---------- */
+function md(src, n) {
+  const blocks = String(src).split(/```/);
+  return blocks.map((b, i) => {
+    if (i % 2) return `<pre>${esc(b.replace(/^\w*\n/, ""))}</pre>`;
+    const lines = esc(b).split("\n"); let out = "", list = null;
+    const close = () => { if (list) { out += `</${list}>`; list = null; } };
+    for (let l of lines) {
+      let m;
+      if ((m = l.match(/^\s*[-*•]\s+(.*)/))) { if (list !== "ul") { close(); out += "<ul>"; list = "ul"; } out += `<li>${inline(m[1], n)}</li>`; }
+      else if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))) { if (list !== "ol") { close(); out += "<ol>"; list = "ol"; } out += `<li>${inline(m[1], n)}</li>`; }
+      else if ((m = l.match(/^#{1,6}\s+(.*)/))) { close(); out += `<h4>${inline(m[1], n)}</h4>`; }
+      else if (/^\s*\|.*\|\s*$/.test(l)) { close(); if (!/^\s*\|[\s:-|]+\|\s*$/.test(l)) out += `<table><tr>${l.trim().slice(1, -1).split("|").map(c => `<td>${inline(c.trim(), n)}</td>`).join("")}</tr></table>`; }
+      else if (!l.trim()) { close(); }
+      else { close(); out += `<p>${inline(l, n)}</p>`; }
+    }
+    close(); return out.replace(/<\/table><table>/g, "");
+  }).join("");
+}
+function inline(s, n) {
+  return s.replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|\W)\*([^*\s][^*]*)\*(?=\W|$)/g, "$1<em>$2</em>")
+    .replace(/⚠ (not found in the sources|partly supported)/g, '<span class="flag">⚠ $1</span>')
+    .replace(/\[(\d+)\]/g, (m, d) => (+d >= 1 && +d <= n) ? `<button class="cite" type="button" data-cite="${d}">${d}</button>` : m);
+}
+
+/* ---------- asking ---------- */
+function addQ(text) { const d = document.createElement("div"); d.className = "q"; d.textContent = text; $("#inner").appendChild(d); }
+function scrollDown() { const t = $("#thread"); t.scrollTop = t.scrollHeight; }
+function stepHTML(st) {
+  const ic = st.running ? "" : ({route: "→", check: "✓", answer: "✎", search: "⌕", rank: "≡", sources: "❏", entities: "◆", load: "▤", quota: "↻"}[st.kind] || "✓");
+  return `<li class="st k-${esc(st.kind)}${st.running ? " run" : ""}" data-kind="${esc(st.kind)}">
+    <span class="ic">${ic}</span>
+    <div><div class="tt">${esc(st.title)}</div>${st.detail ? `<div class="dd">${esc(st.detail)}</div>` : ""}
+      ${(st.items || []).length ? `<ul>${st.items.map(i => `<li>${esc(i)}</li>`).join("")}</ul>` : ""}</div>
+    <span class="ms">${st.running ? "" : st.ms != null ? (st.ms >= 1000 ? (st.ms / 1000).toFixed(1) + "s" : st.ms + "ms") : st.t + "s"}</span></li>`;
+}
+async function ask(question) {
+  question = question.trim(); if (!question || busy) return;
+  if (!readyDocs().length) { alertInline("Add a document first, and wait until it shows “ready”."); return; }
+  if ($("#inner .empty")) $("#inner").innerHTML = "";
+  busy = true; $("#send").disabled = true;
+  addQ(question);
+  const wrap = document.createElement("div"); wrap.className = "a";
+  wrap.innerHTML = `<details class="proc" open><summary><b>Working</b><span class="dots"></span></summary><ol class="steps"></ol></details>`;
+  $("#inner").appendChild(wrap); scrollDown();
+  const list = wrap.querySelector(".steps"), t0 = performance.now();
+  let n = 0;
+  const addStep = st => {
+    const running = list.querySelector(`.st.run[data-kind="${CSS.escape(st.kind)}"]`);
+    const html = stepHTML(st);
+    if (running) running.outerHTML = html; else list.insertAdjacentHTML("beforeend", html);
+    if (!st.running) n++;
+    scrollDown();
+  };
+  try {
+    const sel = scopeDocs().map(d => d.slug);
+    const r = await fetch("/api/ask/stream", {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({question, docs: sel.length === readyDocs().length ? null : sel, verify: $("#verify").checked})});
+    if (!r.ok) { let m = r.statusText; try { m = (await r.json()).detail || m; } catch {} throw new Error(m); }
+    const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "", result = null;
+    for (;;) {
+      const {value, done} = await reader.read(); if (done) break;
+      buf += dec.decode(value, {stream: true});
+      let i; while ((i = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, i); buf = buf.slice(i + 1); if (!line.trim()) continue;
+        const ev = JSON.parse(line);
+        if (ev.type === "step") addStep(ev);
+        else if (ev.type === "result") result = ev;
+        else if (ev.type === "error") throw new Error(ev.message);
+      }
+    }
+    if (!result) throw new Error("No answer came back.");
+    const secs = ((performance.now() - t0) / 1000).toFixed(1);
+    const ans = renderAnswer(result);
+    const proc = wrap.querySelector(".proc"); proc.open = false;
+    proc.querySelector("summary").innerHTML = `<b>Process</b> · ${n} steps · ${secs}s <span>— see exactly how this answer was found and checked</span>`;
+    ans.prepend(proc);
+    wrap.replaceWith(ans);
+  } catch (e) {
+    const err = document.createElement("div"); err.className = "err"; err.textContent = e.message;
+    wrap.querySelector("summary").innerHTML = "<b>Process</b> · stopped"; wrap.appendChild(err);
+  }
+  busy = false; $("#send").disabled = false; scrollDown();
+}
+function checkBadge(c) {
+  if (!c) return "";
+  if (c.error) return `<span class="check warn">Citation check unavailable</span>`;
+  const n = c.supported + c.partial + c.recited + c.unsupported;
+  if (!n) return `<span class="check warn">No cited claims to check</span>`;
+  const bad = c.unsupported, warn = c.partial + c.recited;
+  const parts = [`${c.supported}/${n} supported`];
+  if (c.partial) parts.push(`${c.partial} partly`); if (c.recited) parts.push(`${c.recited} re-cited`); if (bad) parts.push(`${bad} not in sources`);
+  return `<span class="check ${bad ? "bad" : warn ? "warn" : ""}" title="Each cited sentence was checked against its source">✓ ${parts.join(" · ")}</span>`;
+}
+function renderAnswer(res) {
+  const el = document.createElement("div"); el.className = "a"; el.dataset.id = res.id;
+  const multi = new Set(res.sources.map(s => s.doc)).size > 1;
+  el._sources = res.sources;
+  el.innerHTML = `<div class="body">${md(res.answer, res.sources.length)}</div>
+    <div class="meta">${checkBadge(res.check)}${res.route === "overview" ? `<span class="route">overview of the whole document</span>` : ""}
+      <div class="fb"><button type="button" data-fb="1" aria-label="Good answer">👍</button><button type="button" data-fb="-1" aria-label="Bad answer">👎</button></div></div>
+    <div class="sources">${res.sources.map((s, i) => `<button type="button" class="src" data-src="${i}">
+      <span class="n">${i + 1}</span><span class="p">${multi ? `<small>${esc(s.doc_name)}</small>` : ""}${esc(s.path.split(" › ").slice(1).join(" › ") || s.path)}<small>${pages(s.pages)}</small></span></button>`).join("")}</div>`;
+  return el;
+}
+
+/* ---------- drawer ---------- */
+let procDoc = null;
+function openDrawer(tab) { $("#app").classList.add("drawer-open"); procDoc = tab === "proc" ? procDoc : null;
+  $("#tabSrc").classList.toggle("on", tab === "src"); $("#tabOut").classList.toggle("on", tab === "out"); $("#tabProc").classList.toggle("on", tab === "proc"); }
+function showProcess(slug) {
+  procDoc = slug; openDrawer("proc"); procDoc = slug;
+  const d = docs.find(x => x.slug === slug); if (!d) return;
+  const live = d.status === "processing" || d.status === "queued";
+  const steps = d.steps || [];
+  $("#dbody").innerHTML = `<div class="path">How this document was processed</div><div class="dtitle">${esc(d.name)}</div>
+    <div class="path"><span class="pill ${esc(d.status)}">${esc(d.status)}</span>${d.seconds ? ` · ${d.seconds}s` : ""}${d.added ? ` · added ${esc(d.added)}` : ""}</div>
+    ${steps.length ? `<ol class="tl">${steps.map((s, i) => `<li class="${live && i === steps.length - 1 ? "live" : ""}"><small>${s.t}s</small>${esc(s.msg)}</li>`).join("")}</ol>`
+      : `<p class="path">${live ? "Starting…" : "No step log for this document (it was added before step logging existed)."}</p>`}
+    ${d.structure ? `<div class="cardbox"><b>Structure method</b><div>${esc(d.structure)}</div></div>` : ""}
+    ${d.status === "error" ? `<div class="err">${esc(d.message)}</div>` : ""}`;
+}
+async function showNode(slug, id, fallback) {
+  openDrawer("src"); lastSrc = {slug, id};
+  $("#dbody").innerHTML = `<p class="thinking"><span class="dots">Loading</span></p>`;
+  try {
+    const n = await api(`/api/docs/${encodeURIComponent(slug)}/node/${encodeURIComponent(id)}`);
+    const c = n.card || {};
+    $("#dbody").innerHTML = `<div class="path">${esc(n.doc_name)} · ${esc(n.path.split(" › ").slice(1).join(" › "))}</div>
+      <div class="dtitle">${esc(n.title)}</div><div class="path">${pages(n.pages)} · <a href="/api/docs/${encodeURIComponent(slug)}/file" target="_blank" rel="noopener">open original</a></div>
+      ${c.summary ? `<div class="cardbox"><b>Index card</b><div>${esc(c.summary)}</div>${(c.questions||[]).length ? `<b>Answers questions like</b><ul>${c.questions.slice(0,4).map(q => `<li>${esc(q)}</li>`).join("")}</ul>` : ""}</div>` : ""}
+      <div class="srctext">${esc(n.text || fallback || "")}</div>`;
+  } catch (e) { $("#dbody").innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+async function showOutline(slug) {
+  openDrawer("out"); outlineDoc = slug;
+  $("#dbody").innerHTML = `<p class="thinking"><span class="dots">Loading outline</span></p>`;
+  try {
+    const o = await api(`/api/docs/${encodeURIComponent(slug)}/outline`);
+    const tree = ns => `<ul class="tree">${ns.map(n => `<li><button type="button" data-node="${esc(n.id)}"><span>${esc(n.title)}</span><small>${pages(n.pages)}</small></button>${n.children.length ? tree(n.children) : ""}</li>`).join("")}</ul>`;
+    $("#dbody").innerHTML = `<div class="dtitle">${esc(o.name)}</div>
+      ${o.ocr ? `<div class="path">Scanned: OCR on ${o.ocr.pages} pages with ${esc(o.ocr.engine)}${o.ocr.low_confidence_pages.length ? ` · low confidence on pages ${o.ocr.low_confidence_pages.join(", ")}` : ""}</div>` : ""}
+      ${o.summary ? `<div class="cardbox"><b>Whole document</b><div>${esc(o.summary)}</div></div>` : ""}${tree(o.children)}`;
+  } catch (e) { $("#dbody").innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click", async e => {
+  const t = e.target.closest("button,[data-sel]"); if (!t) return;
+  if (t.dataset.ask) { ask(t.dataset.ask); }
+  else if (t.dataset.del) { const d = docs.find(x => x.slug === t.dataset.del);
+    if (t.dataset.confirm !== "1") { t.dataset.confirm = "1"; t.textContent = "Remove?"; setTimeout(() => { t.dataset.confirm = ""; t.textContent = "🗑"; }, 3000); return; }
+    await api(`/api/docs/${encodeURIComponent(t.dataset.del)}`, {method: "DELETE"}); loadDocs(); }
+  else if (t.dataset.out) { showOutline(t.dataset.out); }
+  else if (t.dataset.proc) { showProcess(t.dataset.proc); }
+  else if (t.dataset.node && outlineDoc) { showNode(outlineDoc, t.dataset.node); }
+  else if (t.dataset.cite || t.dataset.src) {
+    const a = t.closest(".a"), i = t.dataset.cite ? +t.dataset.cite - 1 : +t.dataset.src, s = a._sources[i];
+    if (t.dataset.cite) { const b = a.querySelector(`[data-src="${i}"]`); b.classList.remove("flash"); void b.offsetWidth; b.classList.add("flash"); }
+    showNode(s.doc, s.node_id, s.text);
+  }
+  else if (t.dataset.fb) { const a = t.closest(".a");
+    await api("/api/feedback", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id: a.dataset.id, value: +t.dataset.fb})});
+    a.querySelectorAll("[data-fb]").forEach(b => b.classList.toggle("on", b === t)); }
+});
+document.addEventListener("change", e => { const s = e.target.dataset.sel; if (s) { e.target.checked ? selected.add(s) : selected.delete(s); saveSel(); renderScope(); } });
+$("#selAll").onclick = () => { selected.clear(); saveSel(); renderDocs(); };
+$("#close").onclick = () => $("#app").classList.remove("drawer-open");
+$("#tabOut").onclick = () => { const d = outlineDoc || lastSrc?.slug || readyDocs()[0]?.slug; if (d) showOutline(d); };
+$("#tabSrc").onclick = () => { if (lastSrc) showNode(lastSrc.slug, lastSrc.id); };
+$("#tabProc").onclick = () => { const d = procDoc || outlineDoc || lastSrc?.slug || docs[0]?.slug; if (d) showProcess(d); };
+$("#learn").onclick = async () => { const b = $("#learn"); b.disabled = true; b.textContent = "Learning…";
+  try { const r = await api("/api/consolidate", {method: "POST"}); const n = Object.values(r.changed).reduce((x, y) => x + y, 0);
+    b.textContent = n ? `Learned ${n} question${n > 1 ? "s" : ""}` : "Nothing new to learn"; } catch (e) { b.textContent = "Failed: " + e.message; }
+  setTimeout(() => { b.disabled = false; b.textContent = "Learn from 👍 answers"; }, 3500); };
+const drop = $("#drop");
+$("#file").onchange = e => { upload(e.target.files); e.target.value = ""; };
+drop.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("#file").click(); } });
+["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => upload(e.dataTransfer.files));
+const q = $("#q");
+q.addEventListener("input", () => { q.style.height = "auto"; q.style.height = Math.min(q.scrollHeight, 200) + "px"; });
+q.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("#form").requestSubmit(); } });
+$("#form").onsubmit = e => { e.preventDefault(); const v = q.value; q.value = ""; q.style.height = "auto"; ask(v); };
+
+(async () => {
+  try { const s = await api("/api/status"); $("#ver").textContent = "v" + s.version; $("#home").textContent = "Data: " + s.home;
+    $("#keyBanner").hidden = s.keys.GROQ_API_KEY || s.keys.GROQ_PAID_API_KEY; } catch {}
+  loadDocs();
+})();
+</script>
+</body>
+</html>
