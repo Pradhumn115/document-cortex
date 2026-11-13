@@ -150,7 +150,7 @@ cortex/
   evalset.py    independent benchmark: generate, run, score, OCR error rate
 report/         project report (template + build script output)
   workspace.py  projects and chats (JSON files next to the library)
-tests/          41 tests, no network needed
+tests/          42 tests, no network needed
 ```
 
 See [ROADMAP.md](ROADMAP.md) for what is built and what is next.
