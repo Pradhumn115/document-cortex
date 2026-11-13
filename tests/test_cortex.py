@@ -493,3 +493,23 @@ def test_long_answers_are_checked_in_batches():
     _, rep = verify(fake, ans, [{"path": "A", "text": "x"}])
     assert rep["supported"] == 20 and not rep.get("error")
     assert max(len(_re.findall(r"CLAIM \d+", u)) for u in calls) <= BATCH
+
+
+def test_checker_sees_the_relevant_part_of_long_sources():
+    """A long section is not cut at its start: the part the claim is about is sent."""
+    from cortex.verify import SOURCE_CHARS, SYSTEM, excerpt, verify
+    filler = "Unrelated opening text about microbes and diet. " * 120
+    tail = "The five great elements are पृथ्वी, जल, अग्नि, वायु and आकाश."
+    text = filler + tail
+    assert len(text) > SOURCE_CHARS
+    ex = excerpt(text, ["अग्नि – fire, one of the five great elements"])
+    assert "अग्नि" in ex and len(ex) <= SOURCE_CHARS and ex.startswith("Unrelated opening")
+    assert excerpt("short", ["x"]) == "short"
+    seen = []
+
+    def judge(system, user):
+        seen.append((system, user))
+        return json.dumps({"verdicts": [{"claim": 1, "verdict": "supported", "supported_by": [1]}]})
+    _, rep = verify(judge, "- अग्नि – fire [1]", [{"path": "Nadi Darshan", "text": text}])
+    assert rep["supported"] == 1 and "अग्नि, वायु" in seen[0][1]
+    assert "translation" in SYSTEM and "OCR" in SYSTEM

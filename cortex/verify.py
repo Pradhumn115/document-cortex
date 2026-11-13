@@ -18,7 +18,39 @@ from dataclasses import dataclass, field
 from .llm import LLM, parse_json_object
 
 CITE = re.compile(r"\[(\d+)\]")
-SOURCE_CHARS = 2500
+SOURCE_CHARS = 4000
+# \w alone splits Indic words at vowel signs and viramas (combining marks), so add those blocks
+_WORD = re.compile(r"(?:\w|[\u0300-\u036f\u0900-\u0dff\u1ab0-\u1aff\u1dc0-\u1dff])+")
+
+
+def excerpt(text: str, claims: list[str], limit: int = SOURCE_CHARS) -> str:
+    """A source cut to `limit` characters, keeping the parts that share words with the claims.
+
+    Long sections used to be cut at the start, so a claim about their second half was checked
+    against text that did not contain it. Short sources are returned whole."""
+    if len(text) <= limit:
+        return text
+    want = {w.lower() for c in claims for w in _WORD.findall(CITE.sub("", c)) if len(w) > 2}
+    chunks, buf = [], ""
+    for part in re.split(r"(?<=[\n.!?।])\s+", text):
+        if buf and len(buf) + len(part) > 400:
+            chunks.append(buf)
+            buf = ""
+        buf = f"{buf} {part}" if buf else part
+    if buf:
+        chunks.append(buf)
+    score = [len(want & {w.lower() for w in _WORD.findall(ch)}) for ch in chunks]
+    keep, used = {0}, len(chunks[0])  # the opening says what the section is about
+    for i in sorted(range(1, len(chunks)), key=lambda i: -score[i]):
+        if score[i] == 0 or used + len(chunks[i]) + 3 > limit:
+            continue
+        keep.add(i)
+        used += len(chunks[i]) + 3
+    out, prev = [], -1
+    for i in sorted(keep):
+        out.append(("… " if i != prev + 1 else "") + chunks[i])
+        prev = i
+    return " ".join(out)[:limit]
 
 SYSTEM = """You check citations in an answer against numbered sources.
 For each numbered CLAIM, decide whether the sources it cites support it:
@@ -28,6 +60,13 @@ For each numbered CLAIM, decide whether the sources it cites support it:
 Also list "supported_by": the numbers of ALL sources that do support the claim
 (may differ from the cited ones; empty if none do).
 Judge only against the source text, not your own knowledge.
+The sources may be in a different language from the answer. A translation, transliteration or
+gloss of words the source contains is supported: if the source lists "पृथ्वी" among the elements,
+the claim "पृथ्वी – earth" is supported. Do not mark a claim down only because the source does
+not spell out the English (or other) equivalent.
+A list item is supported when the cited source mentions that item.
+Sources may be OCR of scanned pages with misread letters; judge by meaning and allow
+obvious OCR slips (a garbled word in a list where the other items match).
 Return ONLY JSON: {"verdicts": [{"claim": 1, "verdict": "...", "supported_by": [..],
 "note": "<10 words on what is missing, if not supported>"}, ...]}"""
 
@@ -146,7 +185,8 @@ def verify(llm: LLM, answer: str, sources: list[dict]) -> tuple[str, dict]:
     if not cited:
         return answer, report
 
-    src = "\n\n".join(f"[{i}] {s['path']}\n{s['text'][:SOURCE_CHARS]}" for i, s in enumerate(sources, 1))
+    texts = [c.text for c in cited]
+    src = "\n\n".join(f"[{i}] {s['path']}\n{excerpt(s['text'], texts)}" for i, s in enumerate(sources, 1))
 
     def check_batch(batch: list) -> dict:
         # long answers are checked in small batches: one request with 20 claims can use up the
