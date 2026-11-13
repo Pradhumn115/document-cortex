@@ -35,7 +35,13 @@ from . import config
 from .llm import parse_json_object
 
 BENCH = Path(__file__).resolve().parent.parent / "bench"
+TAG = "v1"  # "v2" = held-out set: other sections, written after the v1 fixes
 QFILE, RFILE = BENCH / "eval_v1.jsonl", BENCH / "results_v1.jsonl"
+
+
+def set_tag(tag: str) -> None:
+    global TAG, QFILE, RFILE
+    TAG, QFILE, RFILE = tag, BENCH / f"eval_{tag}.jsonl", BENCH / f"results_{tag}.jsonl"
 GEN_MODEL = "qwen/qwen3.8-27b"
 SEED = 7
 SKIP = re.compile(r"project gutenberg|gutenberg\.org|copyright \(c\)|all rights reserved", re.I)
@@ -163,7 +169,7 @@ JSON: {{"question": "...", "answer": "...", "quote_a": "5-30 words copied exactl
 UNANS_USER = """DOCUMENT: {title}
 TOP-LEVEL SECTIONS: {sections}
 
-OPENING TEXT:
+TEXT FROM THE DOCUMENT:
 {text}
 
 Write 2 questions that a reader of this document might plausibly ask, on its topic, but that \
@@ -174,12 +180,23 @@ Write them in English.
 JSON: {{"questions": [{{"question": "...", "why_unanswerable": "..."}}]}}"""
 
 
+def _unans_text(tree) -> str:
+    t = doc_text(tree)
+    if TAG == "v1":
+        return t[:2500]
+    mid = len(t) // 2  # held-out set: the middle of the document, so the questions differ from v1
+    return t[mid:mid + 2500]
+
+
 def generate(per_doc: int = 6) -> None:
     from .library import Library
     lib = Library()
     llm = qwen()
-    rng = random.Random(SEED)
+    rng = random.Random(SEED if TAG == "v1" else f"{SEED}:{TAG}")
     out: list[dict] = []
+    v1 = BENCH / "eval_v1.jsonl"
+    v1_nodes_all = {(q["doc"], q["node_id"]) for q in map(json.loads, v1.read_text(encoding="utf-8").splitlines())
+                    if isinstance(q.get("node_id"), str)} if TAG != "v1" and v1.exists() else set()
     lock = threading.Lock()
 
     def one_doc(slug: str) -> list[dict]:
@@ -189,7 +206,9 @@ def generate(per_doc: int = 6) -> None:
         secs = eligible_sections(tree)
         if not secs:
             return []
-        picks = spread(secs, per_doc)
+        v1_nodes = {n.id for n in secs if (slug, n.id) in v1_nodes_all}
+        picks = spread(secs, per_doc) if TAG == "v1" else \
+            [n for n in random.Random(f"{TAG}:{slug}").sample(secs, len(secs)) if n.id not in v1_nodes][:per_doc]
         got: list[dict] = []
         lang = "English"
         for n in picks:
@@ -209,7 +228,7 @@ def generate(per_doc: int = 6) -> None:
                     got.append({**rec, "type": "cross_lang", "question": q["question_en"].strip()})
         # multi-section
         if len(secs) >= 4:
-            for _ in range(2):
+            for _ in range(2 if TAG == "v1" else 3):
                 a, b = rng.sample(secs, 2)
                 r = ask_json(llm, GEN_SYS, MULTI_USER.format(
                     title=doc.name, pa=tree.path_str(a.id), ta=a.text.strip()[:2200],
@@ -223,17 +242,18 @@ def generate(per_doc: int = 6) -> None:
         # unanswerable
         tops = [tree.nodes[c].title for c in tree.root.children][:25]
         r = ask_json(llm, GEN_SYS, UNANS_USER.format(title=doc.name, sections="; ".join(tops),
-                                                     text=doc_text(tree)[:2500]))
+                                                     text=_unans_text(tree)))
         for q in (r.get("questions") or [])[:2]:
             if isinstance(q, dict) and q.get("question"):
                 got.append({"doc": slug, "doc_name": doc.name, "type": "unanswerable", "question": q["question"],
                             "answer": "(not in the document)", "quotes": [], "why": q.get("why_unanswerable", ""),
                             "language": "English", "quote_verified": True})
-        # overview (gold = the document's real top-level structure)
-        got.append({"doc": slug, "doc_name": doc.name, "type": "overview",
-                    "question": f"Give me an overview of “{doc.name}”: what is it about and what are its main parts?",
-                    "answer": "Main parts: " + "; ".join(tops[:15]), "quotes": [], "language": "English",
-                    "quote_verified": True})
+        # overview (gold = the document's real top-level structure); v1 only, they are built from the title
+        if TAG == "v1":
+            got.append({"doc": slug, "doc_name": doc.name, "type": "overview",
+                        "question": f"Give me an overview of “{doc.name}”: what is it about and what are its main parts?",
+                        "answer": "Main parts: " + "; ".join(tops[:15]), "quotes": [], "language": "English",
+                        "quote_verified": True})
         with lock:
             print(f"{slug}: {len(got)} questions, {sum(not g['quote_verified'] for g in got)} with unverified quotes",
                   file=sys.stderr)
@@ -362,7 +382,7 @@ Grade the system answer:
 - "partial": it gives some of the key facts, or the right answer mixed with a wrong claim
 - "incorrect": wrong, missing, or says the documents do not contain the answer
 
-JSON: {{"grade": "correct|partial|incorrect", "reason": "one sentence"}}"""
+JSON, reason first: {{"reason": "one or two sentences", "grade": "correct|partial|incorrect"}}"""
 
 JUDGE_UNANS = """QUESTION: {question}
 
@@ -377,7 +397,7 @@ closely related facts clearly marked as such)
 - "partial": it hedges, or answers mostly with related facts but does not clearly say the specific answer is missing
 - "incorrect": it answers as if the documents contained the answer (invents or assumes it)
 
-JSON: {{"grade": "correct|partial|incorrect", "reason": "one sentence"}}"""
+JSON, reason first: {{"reason": "one or two sentences", "grade": "correct|partial|incorrect"}}"""
 
 JUDGE_OVERVIEW = """QUESTION: {question}
 
@@ -391,7 +411,7 @@ Grade:
 - "partial": right topic but misses most parts, or mixes in another document
 - "incorrect": wrong document or topic, or no overview
 
-JSON: {{"grade": "correct|partial|incorrect", "reason": "one sentence"}}"""
+JSON, reason first: {{"reason": "one or two sentences", "grade": "correct|partial|incorrect"}}"""
 
 
 def judge(llm, q: dict, system_answer: str) -> dict:
@@ -421,7 +441,7 @@ JSON: {{"answered": "yes|no", "quote": "the passage words that answer it, or emp
 def audit_unanswerable(llm, qs: dict, rs: list[dict]) -> dict:
     """The question writer guessed these were not in the document. Check that guess
     against the passages both systems retrieved from that document."""
-    afile = BENCH / "audit_v1.jsonl"
+    afile = BENCH / f"audit_{TAG}.jsonl"
     done = {}
     if afile.exists():
         for l in afile.read_text(encoding="utf-8").splitlines():
@@ -463,7 +483,7 @@ def score(workers: int = 4) -> None:
     qs = {json.loads(l)["id"]: json.loads(l) for l in QFILE.read_text(encoding="utf-8").splitlines() if l.strip()}
     rs = [json.loads(l) for l in RFILE.read_text(encoding="utf-8").splitlines() if l.strip()]
     rs = list({r["id"]: r for r in rs}.values())
-    gfile = BENCH / "grades_v1.jsonl"
+    gfile = BENCH / f"grades_{TAG}.jsonl"
     graded = {}
     if gfile.exists():
         for l in gfile.read_text(encoding="utf-8").splitlines():
@@ -500,7 +520,7 @@ def score(workers: int = 4) -> None:
     summary["label_audit"] = {"unanswerable_checked": len(audit), "answered_by_document": len(invalid),
                               "excluded": [{"id": i, "question": qs[i]["question"], "quote": audit[i]["quote"]}
                                            for i in invalid]}
-    (BENCH / "summary_v1.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
+    (BENCH / f"summary_{TAG}.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
     spotcheck(rows)
     print(json.dumps(summary["overall"], indent=1))
 
@@ -566,20 +586,11 @@ def spotcheck(rows: list[dict]) -> None:
                   f"**Plain-RAG answer** — judge: **{g['base']['grade']}**\n",
                   "> " + r["baseline"]["answer"].replace("\n", "\n> ") + "\n",
                   "Your verdict on the judge: ☐ agree ☐ disagree\n", "---\n"]
-    (BENCH / "spotcheck_v1.md").write_text("\n".join(lines), encoding="utf-8")
+    (BENCH / f"spotcheck_{TAG}.md").write_text("\n".join(lines), encoding="utf-8")
 
 
 # ---------------------------------------------------------------------- OCR
-OCR_TEXT = {
-    "English": ("Alice was beginning to get very tired of sitting by her sister on the bank, and of having "
-                "nothing to do: once or twice she had peeped into the book her sister was reading, but it had "
-                "no pictures or conversations in it, and what is the use of a book, thought Alice, without "
-                "pictures or conversations? So she was considering in her own mind, as well as she could, for "
-                "the hot day made her feel very sleepy and stupid, whether the pleasure of making a daisy-chain "
-                "would be worth the trouble of getting up and picking the daisies."),
-}
-
-
+OCR_PAGES = 3  # passages per language; each is rendered at four damage levels
 def _wrap(text: str, font, width: int, draw) -> list[str]:
     lines, cur = [], ""
     for w in text.split():
@@ -603,16 +614,26 @@ def cer(ref: str, hyp: str) -> float:
     return prev[-1] / max(1, len(a))
 
 
+def _passages(slug: str, n: int, chars: int = 520) -> list[str]:
+    t = json.loads((Path.home() / f".cortex/docs/{slug}/tree.json").read_text(encoding="utf-8"))
+    bodies = [re.sub(r"\s+", " ", n_["text"]) for n_ in t["nodes"]
+              if len(n_.get("text", "")) > 900 and not SKIP.search(n_["text"][:2000])]
+    picks = spread(bodies, n)
+    out = []
+    for b in picks:
+        cut = b[200:200 + chars]
+        out.append(cut[cut.find(" ") + 1:cut.rfind(" ")])
+    return out
+
+
 def ocr_bench() -> None:
+    """Character error rate on synthetic scans of known text: Tesseract alone, the vision
+    model alone, and the pipeline ('auto': Tesseract, escalating unsure pages)."""
     from PIL import Image, ImageDraw, ImageFilter, ImageFont
     import numpy as np
-    from .ocr import LOW_CONFIDENCE, tesseract_page, vlm_page
-    texts = dict(OCR_TEXT)
-    hi = Path.home() / ".cortex/docs/wiki-hi/tree.json"
-    if hi.exists():
-        t = json.loads(hi.read_text(encoding="utf-8"))
-        body = next(n["text"] for n in t["nodes"] if len(n.get("text", "")) > 600)
-        texts["Hindi"] = re.sub(r"\s+", " ", body)[:520]
+    from .ocr import DRAFT_MIN, escalation_threshold, looks_runaway, tesseract_page, vlm_page
+    texts = {"English": _passages("alice-in-wonderland", OCR_PAGES), "Hindi": _passages("wiki-hi", OCR_PAGES)}
+    langs = {"English": "eng", "Hindi": "hin+san+eng"}
     fonts = {"English": ["/System/Library/Fonts/Supplemental/Times New Roman.ttf",
                          "/System/Library/Fonts/Supplemental/Georgia.ttf"],
              "Hindi": ["/System/Library/Fonts/Supplemental/DevanagariMT.ttc",
@@ -623,54 +644,77 @@ def ocr_bench() -> None:
               "medium": dict(blur=1.3, noise=25, rot=1.2, scale=0.65),
               "heavy": dict(blur=1.8, noise=40, rot=2.0, scale=0.5)}
     rng = np.random.default_rng(SEED)
-    out = {}
-    for lang, text in texts.items():
+    strip = lambda t: re.sub(r"^#+\s*", "", t, flags=re.M).replace("[?]", "")
+    pages = []
+    for lang, passages in texts.items():
         fp = next((f for f in fonts[lang] if Path(f).exists()), None)
         if not fp:
             continue
         font = ImageFont.truetype(fp, 34)
-        W = 1700
-        img = Image.new("L", (W, 1200), 255)
-        d = ImageDraw.Draw(img)
-        lines = _wrap(text, font, W - 160, d)
-        for i, ln in enumerate(lines):
-            d.text((80, 80 + i * 56), ln, font=font, fill=0)
-        img = img.crop((0, 0, W, 160 + len(lines) * 56))
-        out[lang] = {}
-        for name, p in levels.items():
-            im = img.rotate(p["rot"], fillcolor=255, expand=True)
-            if p["scale"] != 1.0:
-                im = im.resize((int(im.width * p["scale"]), int(im.height * p["scale"])))
-            if p["blur"]:
-                im = im.filter(ImageFilter.GaussianBlur(p["blur"]))
-            if p["noise"]:
-                a = np.asarray(im).astype(np.int16) + rng.normal(0, p["noise"], (im.height, im.width))
-                im = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
-            im = im.convert("RGB")
-            t0 = time.time()
-            r = tesseract_page(im, langs="hin+san+eng" if lang == "Hindi" else "eng")
-            txt, conf = r["text"], r["conf"]
-            txt = re.sub(r"^#+\s*", "", txt, flags=re.M)
-            out[lang][name] = {"cer": round(cer(text, txt), 4), "conf": conf, "sec": round(time.time() - t0, 2)}
-            # the real pipeline ("auto"): low-confidence pages are re-read by the vision model
-            if conf < LOW_CONFIDENCE:
-                t0 = time.time()
+        for pi, text in enumerate(passages):
+            W = 1700
+            img = Image.new("L", (W, 1200), 255)
+            d = ImageDraw.Draw(img)
+            lines = _wrap(text, font, W - 160, d)
+            for i, ln in enumerate(lines):
+                d.text((80, 80 + i * 56), ln, font=font, fill=0)
+            img = img.crop((0, 0, W, 160 + len(lines) * 56))
+            for name, p in levels.items():
+                im = img.rotate(p["rot"], fillcolor=255, expand=True)
+                if p["scale"] != 1.0:
+                    im = im.resize((int(im.width * p["scale"]), int(im.height * p["scale"])))
+                if p["blur"]:
+                    im = im.filter(ImageFilter.GaussianBlur(p["blur"]))
+                if p["noise"]:
+                    a = np.asarray(im).astype(np.int16) + rng.normal(0, p["noise"], (im.height, im.width))
+                    im = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
+                im = im.convert("RGB")
+                r = tesseract_page(im, langs=langs[lang])
+                rec = {"lang": lang, "page": pi + 1, "level": name, "conf": r["conf"],
+                       "tesseract": round(cer(text, strip(r["text"])), 4)}
                 try:
-                    v = re.sub(r"^#+\s*", "", vlm_page(im)["text"], flags=re.M)
-                    out[lang][name]["cer_auto"] = round(cer(text, v), 4)
+                    vt = vlm_page(im)["text"]
+                    rec["vision"] = round(cer(text, strip(vt)), 4)
+                    rec["vision_runaway"] = looks_runaway(vt)
                 except Exception as e:
-                    out[lang][name]["cer_auto_error"] = str(e)[:200]
-                out[lang][name]["sec_auto"] = round(time.time() - t0, 2)
-            else:
-                out[lang][name]["cer_auto"] = out[lang][name]["cer"]
-            print(lang, name, out[lang][name], file=sys.stderr)
-    (BENCH / "ocr_v1.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+                    rec["vision_error"] = str(e)[:120]
+                esc = r["conf"] < escalation_threshold(langs[lang])
+                if not esc:
+                    rec["pipeline"], rec["route"] = rec["tesseract"], "tesseract"
+                elif r["conf"] >= DRAFT_MIN and len(r["text"].strip()) >= 40:
+                    try:
+                        v = vlm_page(im, langs=langs[lang], draft=r["text"])["text"]
+                        rec["pipeline"], rec["route"] = round(cer(text, strip(v)), 4), "vision corrects draft"
+                    except Exception as e:
+                        rec["pipeline_error"] = str(e)[:120]
+                else:
+                    rec["pipeline"], rec["route"] = rec.get("vision"), "vision from scratch"
+                    if rec.get("vision_runaway"):
+                        rec["pipeline"], rec["route"] = 1.0, "marked unreadable"
+                pages.append(rec)
+                print(rec, file=sys.stderr)
+    summary = {}
+    for lang in texts:
+        summary[lang] = {}
+        for name in levels:
+            rows = [p for p in pages if p["lang"] == lang and p["level"] == name]
+            if rows:
+                avg = lambda k: round(statistics.mean(min(1.0, p[k]) for p in rows if p.get(k) is not None), 4) \
+                    if any(p.get(k) is not None for p in rows) else None
+                summary[lang][name] = {"tesseract": avg("tesseract"), "vision": avg("vision"),
+                                       "pipeline": avg("pipeline"), "pages": len(rows),
+                                       "conf": round(statistics.mean(p["conf"] for p in rows), 1),
+                                       "routes": sorted({p.get("route", "?") for p in rows})}
+    (BENCH / "ocr_v1.json").write_text(json.dumps({"summary": summary, "pages": pages}, ensure_ascii=False, indent=1),
+                                      encoding="utf-8")
+    print(json.dumps(summary, ensure_ascii=False, indent=1))
 
 
 def main() -> None:
     config.load_keys()
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
     ap = argparse.ArgumentParser(prog="python3 -m cortex.evalset")
+    ap.add_argument("--tag", default="v1", help="v1 = main set; v2 = held-out set")
     sub = ap.add_subparsers(dest="cmd", required=True)
     g = sub.add_parser("generate")
     g.add_argument("--per-doc", type=int, default=6)
@@ -680,6 +724,7 @@ def main() -> None:
     sub.add_parser("score")
     sub.add_parser("ocr")
     a = ap.parse_args()
+    set_tag(a.tag)
     if a.cmd == "generate":
         generate(a.per_doc)
     elif a.cmd == "run":

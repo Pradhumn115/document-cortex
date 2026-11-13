@@ -27,3 +27,5 @@ venv/
 
 # full benchmark results include long excerpts of private documents
 bench/results_v1.jsonl
+bench/results_v2.jsonl
+bench/before_fixes/results_v1.jsonl

@@ -60,3 +60,13 @@ Compared against the [architecture doc](https://claude.ai/artifact/XxoW4vc2PWxUP
 - Open: Tesseract is over-confident on blurred Hindi (confidence 79, 13% character error), so the
   page never escalates to the vision model. Escalate Indic pages on a lower bar or on a second signal.
 - To do: a person audits `bench/spotcheck_v1.md` to measure how often the grader is wrong.
+
+### Fixes after v1 (checked on a held-out set, v2)
+
+- Compound questions are split into parts and each part is searched (two-section: 73% → 86%; held-out 83% vs 60%).
+- Answer prompt forbids facts not in the sources and says which part is missing (unanswerable: 77% → 80%;
+  held-out 92% vs 88%). On v1 plain RAG still refuses slightly more often (88%).
+- OCR: escalate below 80 (85 for Indic scripts); the vision model corrects Tesseract's draft (Hindi medium blur
+  22% → 6.5%); repetitive vision output is rejected and the page marked unreadable. Image clean-up
+  (upscale/denoise/binarise) and a script-only hint were tried and made results worse.
+- Grader reasons before grading (it had contradicted itself).

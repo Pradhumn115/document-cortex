@@ -414,3 +414,21 @@ def test_overview_picks_named_document():
     from cortex.ask import _name_key
     assert _name_key("The Gift of the Magi — O. Henry.txt") in _name_key(
         "Give me an overview of “The Gift of the Magi — O. Henry.txt”: what is it about?")
+
+
+def test_compound_questions_are_split():
+    from cortex.ask import sub_questions
+    assert sub_questions("What is the dose of ginger?") == []
+    assert len(sub_questions("酸素発生型光合成の特徴は何か。また、他の回路にはどのようなものがあるか。")) == 2
+    assert len(sub_questions("Quels sont les deux types de photosynthèse et quels sont les organismes concernés ?")) == 2
+    calls = []
+    fake = lambda system, user: calls.append(user) or '{"queries": ["Ayurveda doshas theory", "CCIM and CCRAS"]}'
+    q = "How does the Ayurvedic concept of doshas relate to the government's work through the CCIM and CCRAS?"
+    assert sub_questions(q, fake) == ["Ayurveda doshas theory", "CCIM and CCRAS"] and calls
+
+
+def test_ocr_escalation_rules():
+    from cortex.ocr import escalation_threshold, looks_runaway, vlm_prompt
+    assert escalation_threshold("hin+san+eng") > escalation_threshold("eng") >= 80
+    assert looks_runaway("नाड़ी परीक्षा " * 400) and not looks_runaway("A short, ordinary page of text.")
+    assert "draft" in vlm_prompt("hin", "कुछ पाठ") and "Hindi" in vlm_prompt("hin")

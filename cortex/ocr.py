@@ -19,7 +19,29 @@ import statistics
 import subprocess
 from pathlib import Path
 
-LOW_CONFIDENCE = 60.0  # mean word confidence (0-100) below which a page is flagged
+LOW_CONFIDENCE = 80.0  # mean word confidence (0-100) below which a page goes to the vision model
+# (blurred English scored 61-63 while getting 12-51% of characters wrong; clean print scores 93-96)
+# Tesseract is over-confident on blurred Indic scripts: a damaged Hindi page scored 79 while getting
+# 13% of characters wrong, and clean printed Hindi scans score 87-90. So Indic pages escalate below 85.
+# A page Tesseract mostly read (confidence >= DRAFT_MIN) goes to the vision model with Tesseract's text
+# as a draft to correct: on blurred Hindi that beat both Tesseract and the vision model alone, while
+# the vision model reading Hindi from scratch did worse than Tesseract. Handwriting scores below 50,
+# so it keeps the plain prompt.
+DRAFT_MIN = 50.0
+INDIC = {"hin", "san", "mar", "nep", "ben", "asm", "guj", "pan", "ori", "tam", "tel", "kan", "mal", "sin"}
+LOW_CONFIDENCE_INDIC = 85.0
+
+
+def looks_runaway(text: str) -> bool:
+    """A vision model that cannot read a page sometimes repeats itself for thousands of
+    characters. Such text compresses far better than real prose; reject it."""
+    import zlib
+    b = text.encode("utf-8")
+    return len(b) > 1500 and len(zlib.compress(b)) / len(b) < 0.12
+
+
+def escalation_threshold(langs: str) -> float:
+    return LOW_CONFIDENCE_INDIC if INDIC & set(langs.split("+")) else LOW_CONFIDENCE
 
 SCRIPT_LANGS = {
     "Devanagari": "hin+san+eng", "Latin": "eng", "Arabic": "ara+eng", "Han": "chi_sim+eng",
@@ -143,10 +165,29 @@ VLM_PROMPT = ("/no_think\nTranscribe ALL text on this page exactly as written, i
               "with '## ' ONLY if it is a real section title that introduces the text below it (usually "
               "underlined, boxed or larger); never mark list items, formulas, labels or short lines. "
               "Do not translate, summarise or add commentary. If the page has no text, output nothing.")
+SCRIPT_NAMES = {"hin": "Hindi (Devanagari script)", "san": "Sanskrit (Devanagari script)", "mar": "Marathi (Devanagari)",
+                "ben": "Bengali", "tam": "Tamil", "tel": "Telugu", "guj": "Gujarati", "pan": "Punjabi (Gurmukhi)",
+                "kan": "Kannada", "mal": "Malayalam", "ara": "Arabic", "jpn": "Japanese", "chi_sim": "Chinese",
+                "rus": "Russian", "eng": "English"}
+
+
+def vlm_prompt(langs: str | None = None, draft: str | None = None) -> str:
+    p = VLM_PROMPT
+    names = [SCRIPT_NAMES[l] for l in (langs or "").split("+") if l in SCRIPT_NAMES and l != "eng"]
+    if names:
+        p += f" The page is in {' / '.join(dict.fromkeys(names))}."
+    p += " If a word cannot be read, write [?] instead of guessing."
+    if draft and draft.strip():
+        p += ("\n\nAn OCR program produced this draft of the page. It may contain errors; correct it "
+              "against the image, keeping words it got right:\n\n" + draft.strip()[:6000])
+    return p
+
+
 VLM_DEFAULT = "qwen/qwen3.8-27b"  # on Groq; reads handwriting (tested on handwritten notes)
 
 
-def vlm_page(image, model: str = VLM_DEFAULT, base_url: str | None = None) -> dict:
+def vlm_page(image, model: str = VLM_DEFAULT, base_url: str | None = None,
+             langs: str | None = None, draft: str | None = None) -> dict:
     """OCR one page with a vision-language model over an OpenAI-compatible API.
     Default: Groq (free key, then paid key on daily quota). For a local model
     set CORTEX_VLM_BASE_URL (e.g. mlx_vlm.server / LM Studio) and CORTEX_VLM_MODEL."""
@@ -175,7 +216,7 @@ def vlm_page(image, model: str = VLM_DEFAULT, base_url: str | None = None) -> di
         for attempt in range(5):
             try:
                 r = client.chat.completions.create(model=model, max_tokens=4000, temperature=0.0, messages=[
-                    {"role": "user", "content": [{"type": "text", "text": VLM_PROMPT},
+                    {"role": "user", "content": [{"type": "text", "text": vlm_prompt(langs, draft)},
                                                  {"type": "image_url", "image_url": {"url": url}}]}])
                 text = (r.choices[0].message.content or "").strip()
                 text = re.sub(r"^<think>.*?</think>\s*", "", text, flags=re.S)
@@ -212,12 +253,19 @@ def ocr_pages(images: list[tuple[int, callable]], cache_dir: Path, engine: str =
                 langs = detect_langs(img)
                 log(f"    OCR language: {langs} (script detected on page {page} by Tesseract)")
             res = tesseract_page(img, langs)
-            if engine == "auto" and res["conf"] < LOW_CONFIDENCE:
+            limit = escalation_threshold(langs)
+            if engine == "auto" and res["conf"] < limit:
                 try:
-                    log(f"    page {page}: Tesseract confidence {res['conf']:.0f} < {LOW_CONFIDENCE:.0f} "
-                        f"(handwriting or poor scan) -> re-reading with the vision model")
-                    v = vlm_page(img)
+                    log(f"    page {page}: Tesseract confidence {res['conf']:.0f} < {limit:.0f} "
+                        f"(handwriting or poor scan) -> re-reading with the vision model"
+                        + (" (correcting Tesseract's draft)" if res["conf"] >= DRAFT_MIN else ""))
+                    use_draft = res["conf"] >= DRAFT_MIN and len(res["text"].strip()) >= 40
+                    v = vlm_page(img, langs=langs if use_draft else None, draft=res["text"] if use_draft else None)
                     v["tesseract_conf"] = res["conf"]
+                    if looks_runaway(v["text"]):
+                        log(f"    page {page}: the vision model's text repeats itself; page marked unreadable")
+                        v = {**v, "text": "", "conf": 0.0, "unreadable": True}
+                    v["mode"] = "corrected Tesseract draft" if use_draft else "read from scratch"
                     res = v
                     escalated += 1
                 except Exception as e:  # keep the tesseract text for now; the page stays flagged

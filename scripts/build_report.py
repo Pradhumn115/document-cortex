@@ -32,6 +32,25 @@ def load(p: Path) -> list[dict]:
     return [json.loads(l) for l in p.read_text(encoding="utf-8").splitlines() if l.strip()]
 
 
+def paired(grades: dict, exclude: set) -> dict:
+    """Paired comparison on the same questions: exact McNemar test + bootstrap CI of the gain."""
+    import math
+    rows = [(g["ours"]["grade"] == "correct", g["base"]["grade"] == "correct")
+            for i, g in grades.items() if i not in exclude]
+    w = sum(a and not b for a, b in rows)
+    l = sum(b and not a for a, b in rows)
+    n, k = w + l, min(w, l)
+    p = min(1.0, 2 * sum(math.comb(n, i) for i in range(k + 1)) / 2 ** n) if n else 1.0
+    rng = random.Random(1)
+    d = []
+    for _ in range(4000):
+        smp = [rng.choice(rows) for _ in rows]
+        d.append((sum(a for a, _ in smp) - sum(b for _, b in smp)) / len(smp))
+    d.sort()
+    return {"n": len(rows), "ours_only": w, "base_only": l, "mcnemar_p": round(p, 4),
+            "diff_ci95": [round(d[int(0.025 * len(d))], 3), round(d[int(0.975 * len(d))], 3)]}
+
+
 def main() -> None:
     summary = json.loads((BENCH / "summary_v1.json").read_text(encoding="utf-8"))
     ocr = json.loads((BENCH / "ocr_v1.json").read_text(encoding="utf-8"))
@@ -73,8 +92,16 @@ def main() -> None:
             "langs": len({d["language"].split(" /")[0] for d in docs}) + 1,  # + Sanskrit
             "base_latency": round(statistics.median(r["baseline"]["t"] for r in rs.values()), 2),
             "date": time.strftime("%d %B %Y"),
-            "sig": json.loads((BENCH / "significance_v1.json").read_text()),
+            "sig": paired(gs, {x["id"] for x in summary.get("label_audit", {}).get("excluded", [])}),
             "audit": summary.get("label_audit", {})}
+    before = BENCH / "before_fixes" / "summary_v1.json"
+    if before.exists():
+        data["before"] = json.loads(before.read_text(encoding="utf-8"))
+    v2 = BENCH / "summary_v2.json"
+    if v2.exists():
+        s2 = json.loads(v2.read_text(encoding="utf-8"))
+        g2 = {g["id"]: g for g in load(BENCH / "grades_v2.jsonl")}
+        data["heldout"] = {"summary": s2, "sig": paired(g2, {x["id"] for x in s2.get("label_audit", {}).get("excluded", [])})}
     html = (ROOT / "report" / "template.html").read_text(encoding="utf-8")
     html = html.replace("/*__DATA__*/null", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
     (ROOT / "report" / "report.html").write_text(html, encoding="utf-8")

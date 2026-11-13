@@ -51,7 +51,8 @@ file ──► parse ──► structure tree ──► index cards ──► hy
          │          numbered sections,    summary, terms,    RRF, one hit per
          │          or titled parts)      entities, Qs)      section)
          └─ scans: Tesseract (script auto-detect, 160+ languages);
-            low-confidence pages (handwriting) re-read by a vision model
+            unsure pages: a vision model corrects Tesseract's draft
+            (or reads handwriting from scratch); runaway output rejected
 
 question ──► router ──► overview: top-level cards of each document
                  └───► search: hybrid search per document + entity index,
@@ -91,30 +92,30 @@ Any OpenAI-compatible server works too (`--provider openai`, e.g. LM Studio), as
 `python3 scripts/fetch_samples.py` downloads the public test documents;
 `bench/multidoc_questions.tsv` has the questions and expected answers.
 
-### Independent benchmark (272 questions, 15 documents, 6 languages)
+### Independent benchmark (15 documents, 6 languages)
 
 Questions written by a different model family (Qwen) from the raw text; every gold answer
 carries a quote that code checks is in the document; answers graded by Qwen; every question
 asked against the whole library. Baseline = plain RAG (same chunks, vectors only, top 6,
-same answer model). Full write-up: `report/report.html` (`python3 scripts/build_report.py`).
+same answer model and prompt). Full write-up: `report/report.html` (`python3 scripts/build_report.py`).
 
-| | Document Cortex | plain RAG |
+| | main set (271) | held-out set (160, written after the fixes) |
 |---|---|---|
-| answers fully correct | **86.4%** | 81.2% |
-| evidence found by search | **90.0%** | 79.2% |
-| evidence ranked first | **64.9%** | 48.5% |
-| cross-language questions correct | **75%** | 61% |
-| document overviews correct | **67%** | 20% |
-| two-section questions correct | 73% | **86%** |
-| unanswerable questions refused | 77% | **85%** |
+| Document Cortex, fully correct | **87.5%** | **91.2%** |
+| plain RAG, fully correct | 80.4% | 81.9% |
+| paired: only we / only RAG right | 32 / 13 (p = 0.007) | 19 / 4 (p = 0.003) |
+| evidence found by search | **90%** vs 79% | **89%** vs 81% |
+| two-section questions | **86%** vs 82% | **83%** vs 60% |
+| cross-language questions | **74%** vs 61% | **79%** vs 50% |
+| unanswerable, correctly refused | 80% vs **88%** | **92%** vs 88% |
 
-Paired: 26 questions only we answered correctly, 12 only the baseline (McNemar p = 0.034).
-Citation check: 410 of 475 cited sentences supported, 47 flagged partly supported, 18 not found.
-OCR character error (synthetic scans): English 0% / 0% / 0% / 1.3% from clean to heavy damage
-with vision-model escalation; Hindi 0.8% / 0.6% / 13% / 70%.
+OCR character error on synthetic scans (3 pages per level; Tesseract → pipeline):
+English medium blur 28% → 0.8%, heavy 100% → 14%; Hindi medium blur 22% → 6.5%
+(the vision model alone: 40%); heavy Hindi stays unreadable and is marked so.
 
 ```bash
 python3 -m cortex.evalset generate && python3 -m cortex.evalset run && python3 -m cortex.evalset score
+python3 -m cortex.evalset --tag v2 generate --per-doc 4   # held-out set
 python3 -m cortex.evalset ocr
 ```
 
@@ -145,7 +146,7 @@ cortex/
   bench.py      benchmarks; profiles/ has the Bhavaprakasha corpus loader
   evalset.py    independent benchmark: generate, run, score, OCR error rate
 report/         project report (template + build script output)
-tests/          36 tests, no network needed
+tests/          38 tests, no network needed
 ```
 
 See [ROADMAP.md](ROADMAP.md) for what is built and what is next.

@@ -25,10 +25,13 @@ from .trace import NullTrace
 from .tree import Tree
 
 SYSTEM = """You answer questions about documents using ONLY the numbered sources \
-provided. Cite every claim with its source number in square brackets, exactly like [1] \
-or [2][3] — no other citation style, no line numbers. If the sources do not contain \
-the answer, say so plainly and say what they do cover. Write the answer in {language}. \
-Be concise: a few sentences or a short list."""
+provided. Every fact in your answer must be stated in a source: never add facts from your own \
+knowledge, even well-known ones, and never fill in numbers, names, dates or mechanisms the sources \
+do not give. Cite every claim with its source number in square brackets, exactly like [1] \
+or [2][3] — no other citation style, no line numbers. If the question has several parts, answer \
+each part. If the sources answer only part of it, answer that part and say plainly which part \
+they do not cover. If they do not contain the answer at all, say so plainly and say what they do \
+cover. Write the answer in {language}. Be concise: a few sentences or a short list."""
 
 SOURCE_CHARS = 3000
 MULTI_DOC_MARGIN = 0.05  # cosine gap (e5) that separated relevant from unrelated documents in testing
@@ -231,28 +234,46 @@ def gather_overview(docs: list[Doc], k: int = 6, trace=None, question: str = "")
     return out[:k]
 
 
-def gather(docs: list[Doc], question: str, k: int = 6, trace=None) -> tuple[list[dict], str]:
-    trace = trace or NullTrace()
-    mode = route(question)
-    if mode == "overview":
-        m = OVERVIEW.search(question)
-        trace.step("route", "Route: overview of the whole document",
-                   f"The question asks for an overview (“{m.group(0)}”), so the answer is built from each "
-                   f"document's top-level index cards instead of searching for one passage.")
-        return gather_overview(docs, k, trace=trace, question=question), mode
-    trace.step("route", f"Route: search {'across ' + str(len(docs)) + ' documents' if len(docs) > 1 else 'the document'}",
-               "Not an overview question, so look for the specific sections that answer it.")
+_SPLIT = re.compile(
+    r"\?\s+(?=\S)|[?？]\s*|。\s*(?:また|さらに)、?|;\s+|,?\s+and\s+(?=(?:what|which|how|why|who|when|where|does|is|are)\b)"
+    r"|,?\s+et\s+(?=(?:quel|quelle|quels|quelles|comment|pourquoi|qui|où)\b)|\s+और\s+(?=(?:क्या|कौन|कैसे|क्यों|कितन))", re.I)
+_LINKED = re.compile(r"\b(relate|relation|compare|comparison|differ|difference|versus|vs\.?|both|between|while|"
+                     r"as well as|in addition)\b|および|と比較|の関係|तुलना|संबंध|مقارنة|comparer|rapport entre", re.I)
+DECOMPOSE = """Split the question into the separate things a search engine must look up to answer it. \
+If it asks one thing, return it unchanged as the only item. At most 3 items, each a short standalone \
+search query in the question's language. Reply with JSON only: {"queries": ["...", "..."]}"""
+
+
+def sub_questions(question: str, llm=None) -> list[str]:
+    """Parts of a compound question, or [] if it asks one thing. Cheap patterns first;
+    a long question that links two topics ("how does X relate to Y") goes to the model."""
+    parts = [p.strip(" ,;。、") for p in _SPLIT.split(question) if p and len(p.strip(" ,;。、")) >= 12]
+    if len(parts) >= 2:
+        return parts[:3]
+    if llm is not None and len(question) >= 90 and _LINKED.search(question):
+        try:
+            from .llm import parse_json_object
+            qs = parse_json_object(llm(DECOMPOSE, question)).get("queries") or []
+            qs = [q.strip() for q in qs if isinstance(q, str) and len(q.strip()) >= 8]
+            if len(qs) >= 2:
+                return qs[:3]
+        except Exception:
+            pass
+    return []
+
+
+def _search_all(docs: list[Doc], question: str, k: int, trace, qvecs: dict, label: str = "") -> list:
+    """Ranked (score, doc, node_id, why) candidates for one query across the documents."""
     multi = len(docs) > 1
     cands: list[tuple[float, Doc, str, str]] = []
-    qvecs: dict[int, np.ndarray] = {}
 
     def qvec(d: Doc):
-        key = id(d.searcher.embed)
+        key = (id(d.searcher.embed), question)
         if key not in qvecs:
             qvecs[key] = d.searcher.embed([question], "query")[0]
         return qvecs[key]
 
-    with trace.timed("search", "Hybrid search: keywords (BM25) + meaning (vectors), fused by rank") as st:
+    with trace.timed("search", f"Hybrid search{label}: keywords (BM25) + meaning (vectors), fused by rank") as st:
         lines = []
         for d in docs:
             hits = d.searcher.search(question, k=k)
@@ -293,12 +314,48 @@ def gather(docs: list[Doc], question: str, k: int = 6, trace=None) -> tuple[list
                    f"the best match ({best:.3f}) was dropped as unrelated.",
                    items=[f"not relevant: {n}" for n in dropped_docs][:12])
         cands = kept
+    return cands
+
+
+def gather(docs: list[Doc], question: str, k: int = 6, trace=None, llm=None) -> tuple[list[dict], str]:
+    trace = trace or NullTrace()
+    mode = route(question)
+    if mode == "overview":
+        m = OVERVIEW.search(question)
+        trace.step("route", "Route: overview of the whole document",
+                   f"The question asks for an overview (“{m.group(0)}”), so the answer is built from each "
+                   f"document's top-level index cards instead of searching for one passage.")
+        return gather_overview(docs, k, trace=trace, question=question), mode
+    trace.step("route", f"Route: search {'across ' + str(len(docs)) + ' documents' if len(docs) > 1 else 'the document'}",
+               "Not an overview question, so look for the specific sections that answer it.")
+    multi = len(docs) > 1
+    qvecs: dict = {}
+    parts = sub_questions(question, llm)
+    if parts:
+        trace.step("decompose", f"The question asks {len(parts)} things; each part is searched too", items=parts)
+    lists = [(question, _search_all(docs, question, k, trace, qvecs, " for the whole question" if parts else ""))]
+    for i, p in enumerate(parts, 1):
+        lists.append((p, _search_all(docs, p, k, trace, qvecs, f" for part {i}")))
+
+    def qv(d: Doc, q: str):
+        key = (id(d.searcher.embed), q)
+        if key not in qvecs:
+            qvecs[key] = d.searcher.embed([q], "query")[0]
+        return qvecs[key]
+
+    # take the best remaining candidate from each list in turn, so every part gets sources
+    order, pos = [], [0] * len(lists)
+    while any(pos[i] < len(c) for i, (_, c) in enumerate(lists)):
+        for i, (q, c) in enumerate(lists):
+            if pos[i] < len(c):
+                order.append((q, c[pos[i]]))
+                pos[i] += 1
     out, used, how = [], set(), []
-    for _, d, nid, why in cands:
+    for q, (_, d, nid, why) in order:
         if (d.slug, nid) in used:
             continue
         used.add((d.slug, nid))
-        text, method = expand(d, nid, question, qvec(d))
+        text, method = expand(d, nid, q, qv(d, q))
         out.append(_source(d, nid, text, multi))
         pg = pages_str(d.tree.nodes[nid].meta.get("pages"))
         how.append(f"[{len(out)}] {(d.name + ' › ') if multi else ''}"
@@ -323,7 +380,7 @@ def build_prompt(question: str, sources: list[dict]) -> str:
 
 def answer_docs(docs: list[Doc], llm: LLM, question: str, k: int = 6, trace=None) -> dict:
     trace = trace or NullTrace()
-    sources, mode = gather(docs, question, k, trace)
+    sources, mode = gather(docs, question, k, trace, llm)
     lang = answer_language(question)
     prompt = build_prompt(question, sources)
     with trace.timed("answer", f"Writing the answer with {getattr(llm, 'label', 'the answer model')}") as st:

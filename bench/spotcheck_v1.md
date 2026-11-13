@@ -2,61 +2,127 @@
 
 Check the judge: does the grade match your own reading? Mark ✔ or ✘ in the last line of each.
 
-## q019 · number · Ml-mini.pdf
+## q014 · multi · attention-is-all-you-need-1706.03762.pdf
 
-**Q:** In the example of 2-fold cross validation with 100 flowers (60 Roses, 40 Lotus), how many Rose instances are in each fold?
+**Q:** In the Transformer model described in the paper, what specific encoding method was used for the English-German translation dataset, and how does the model's performance on the English-to-German development set (newstest2013) compare between the base model and the 'big' model variant in terms of BLEU score?
 
-**Gold:** 30
+**Gold:** The English-German dataset used byte-pair encoding. The base model achieved a BLEU score of 25.8, while the 'big' model achieved a BLEU score of 26.4 on the newstest2013 development set.
 
-**Evidence:** “60% of 50 → 30 roses”
+**Evidence:** “Sentences were encoded using byte-pair encoding” | “big 6 1024 4096 16 0.3 300K 4.33 26.4”
 
-**Our answer** — judge: **correct** (The system answer correctly states that each fold contains 30 Rose instances, which matches the reference answer.)
+**Our answer** — judge: **correct** (The system answer correctly identifies the encoding method as byte-pair encoding (BPE) and provides the exact BLEU scores for both the base (25.8) and big (26.4) models on the newstest2013 development set, matching the reference answer perfectly.)
 
-> Each fold contains 30 Rose instances (60 % of the 50 samples per fold)[1].
+> - **Encoding method:** The English‑German training sentences were tokenized with **byte‑pair encoding (BPE)**, using a shared source‑target vocabulary of about 37 000 tokens[6].  
+> 
+> - **BLEU scores on the newstest2013 development set:**  
+>   * Base Transformer model – BLEU **25.8**[2].  
+>   * “Big” Transformer model – BLEU **26.4**[2].  
+> 
+> Thus, the big model improves the BLEU score by roughly **0.6 points** over the base model.
 
 **Plain-RAG answer** — judge: **correct**
 
-> Each fold contains 30 Rose instances (60 % of the 50 samples in each fold)[1].
+> - **Encoding method:** The English‑German data were tokenized into word‑pieces using **byte‑pair encoding** (BPE) [6].
+> 
+> - **BLEU scores on the English‑to‑German development set (newstest2013):**  
+>   * Base Transformer model: **25.8 BLEU** [6]  
+>   * “Big” Transformer model: **26.4 BLEU** [6]  
+> 
+> Thus, the big model improves the BLEU score by about **0.6 points** over the base model on this development set.
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
 ---
 
-## q022 · fact · Ml-mini.pdf
+## q023 · unanswerable · Ml-mini.pdf
 
-**Q:** According to the Ml-mini document, what happens to the model if the regularization parameter C is very small?
+**Q:** In the context of the Ml-mini.pdf document, what specific mathematical formula is used to calculate the entropy or Gini impurity for splitting nodes in the Decision Tree classifier mentioned in the overview?
 
-**Gold:** model may overfit
+**Gold:** (not in the document)
 
-**Evidence:** “if C is very small, model may overfit”
+**Our answer** — judge: **correct** (The system correctly identifies that the document does not contain the specific mathematical formula for entropy or Gini impurity, aligning with the ground truth that the question is not answered by the provided text.)
 
-**Our answer** — judge: **correct** (The system answer correctly states that the model may overfit, which matches the reference answer and evidence.)
+> The Ml‑mini.pdf overview mentions Decision Trees but does not give the actual entropy or Gini‑impurity formula used for node splitting. The source only lists the algorithm among the three classifiers and describes its general requirements, without providing the mathematical expression for the impurity measure. Consequently, the specific formula is not covered in the provided material.
 
-> If the regularization parameter C is set to a very small value, the model may overfit the training data. [2]
+**Plain-RAG answer** — judge: **correct**
+
+> The Ml‑mini.pdf overview does not give a concrete entropy or Gini‑impurity formula for deciding splits in a Decision‑Tree classifier. It only notes that a decision tree can handle categorical attributes (e.g., converting “hot”/“cold” into numeric values) and mentions general preprocessing steps such as handling missing values [6].
+
+Your verdict on the judge: ☐ agree ☐ disagree
+
+---
+
+## q025 · overview · Ml-mini.pdf
+
+**Q:** Give me an overview of “Ml-mini.pdf”: what is it about and what are its main parts?
+
+**Gold:** Main parts: Classification Algorithms and Experimental Design Overview — Part 1 (p. 1–5); Normalization, Naive Bayes, and Regression Overview — Part 2 (p. 6–12); Ridge Regression Example and Hyperparameter Tuning — Part 3 (p. 13–17); Gradient Descent Update for Linear Weight — Part 4 (p. 18–19)
+
+**Our answer** — judge: **correct** (The system answer accurately describes the document as a machine learning tutorial and lists the four main parts with correct page ranges and content summaries that align perfectly with the provided top-level parts.)
+
+> **Overview**  
+> “Ml‑mini.pdf” is a compact tutorial on basic machine‑learning methods. It introduces three standard classification algorithms, describes how to prepare data, shows how to design experiments with cross‑validation, and then moves on to probabilistic classification, regression (including ridge regularisation), and a simple gradient‑descent learning rule. A histopathological image case study with 150 patients is used to illustrate the workflow[1].  
+> 
+> **Main parts**
+> 
+> | Part | Content (pages) | ⚠ not found in the sources
+> |------|-----------------|
+> | **Part 1 – Classification Algorithms & Experimental Design** (p. 1‑5) – Review of K‑Nearest Neighbours, Naive Bayes and Decision Tree, their requirements (e.g., odd K, hyper‑parameter tuning), feature‑extraction examples, and preprocessing (min‑max, Z‑score) plus k‑fold (stratified) cross‑validation[1] |
+> | **Part 2 – Normalization, Naive Bayes & Regression Overview** (p. 6‑12) – Demonstrates Z‑score, min‑max and decimal scaling, builds a Naive Bayes classifier (priors, likelihoods, posteriors for classes S and H), and introduces multiple linear and ridge regression with polynomial terms[1] |
+> | **Part 3 – Ridge‑Regression Example & Hyper‑parameter Tuning** (p. 13‑17) – Derives the ridge‑regression error function, explains grid‑search tuning of the regularisation parameter C and polynomial degree d, and shows coefficient calculations (OLS and ridge) with a small data set, noting that larger C can shrink coefficients and raise RMSE[1] |
+> | **Part 4 – Gradient‑Descent Update for a Linear Weight** (p. 18‑19) – Derives the weight‑update rule for a single linear weight using the squared‑error gradient, linking it to the Delta learning rule (η = 0.5)[1] |
+> 
+> Thus the document covers classification basics, data preprocessing, Naive Bayes probability work‑through, linear/ridge regression with tuning, and a gradient‑descent learning example.
 
 **Plain-RAG answer** — judge: **incorrect**
 
-> The provided sources do not contain any information about an “Ml‑mini” document or about the effect of a very small regularization parameter C on the model. They discuss topics such as self‑attention, convolutional layers, and reproducibility statements for other papers, but none address the Ml‑mini model or the behavior of the regularization parameter C.
+> The provided sources do not contain any information about a document named **“Ml‑mini.pdf.”** All of the excerpts relate to RFC 9110 – the HTTP semantics specification – and list sections, header fields, grammar elements, and references for that RFC. Consequently, I cannot give an overview of “Ml‑mini.pdf” or describe its main parts based on the available sources. The sources instead cover topics such as HTTP methods, header field definitions, and related RFC references.
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
 ---
 
-## q028 · fact · Nadi Darshan pp. 40–47 (scanned Hindi).pdf
+## q026 · fact · Nadi Darshan pp. 40–47 (scanned Hindi).pdf
 
-**Q:** नाड़ी दर्शन में बताया गया है कि पेट में गुड़गुड़ाहट और फूलने जैसे लक्षण किस प्रकार की मालिश और घृतपान से नष्ट होते हैं?
+**Q:** नाड़ी दर्शन के अनुसार, भूने हुए पदार्थों के सेवन से पेट में गुड़गुड़ाहट और दर्द जैसे लक्षण किसके कारण बढ़ जाते हैं?
 
-**Gold:** स्नेह (तेल) की मालिश
+**Gold:** शरीर अथवा पेट में वायु की उत्पत्ति
 
-**Evidence:** “ये सब लक्षण स्नेह (tach की मालिश और घृतपान )”
+**Evidence:** “शरीर अथ च पेट में कुछ न कुछ वायु उत्पन्न करते हैं परिणामतः पेट में गुड़गुड़ाहट एवं दरदं आदि लक्षण बढ़ जाते हैं”
 
-**Our answer** — judge: **correct** (The system answer correctly identifies 'स्नेह (ताच) की मालिश' as the remedy, matching the reference answer and the evidence from the document, while the additional detail about 'सेक' does not contradict the core answer.)
+**Our answer** — judge: **correct** (The system answer correctly identifies the production of gas (वायु) in the body/stomach as the cause, which matches the reference answer and the provided evidence. The additional mention of 'Akash' (space/ether) is extra detail that does not contradict the core fact.)
 
-> नाड़ी‑दर्शन के अनुसार पेट में गुड़गुड़ाहट और फूलने जैसे लक्षण **स्नेह (ताच) की मालिश और घृत‑पान** तथा गर्मी से किए जाने वाले **सेक (उष्णता)** द्वारा नष्ट होते हैं[1].
+> नाड़ी‑दर्शन के अनुसार, सभी शष्ट (भूने हुए) पदार्थ शरीर / पेट में वायु उत्पन्न करते हैं; इस वायु के साथ आकाश का भी बढ़ना पेट में गुड़गुड़ाहट और दर्द जैसे लक्षणों को बढ़ा देता है[1].
 
 **Plain-RAG answer** — judge: **correct**
 
-> नाड़ी‑दर्शन के अनुसार पेट में गुड़गुड़ाहट और फूलने जैसे लक्षण स्नेह (ताच की तेल‑या घी‑मालिश और घृत‑पान) तथा सेक (उष्णता) से नष्ट हो जाते हैं[1].
+> भूने हुए पदार्थ शरीर / पेट में वायु (और साथ ही आकाश‑तत्व) उत्पन्न करते हैं, जिससे पेट में वायु‑प्रकोप बढ़ता है और गुड़गुड़ाहट व दर्द जैसे लक्षण बढ़ जाते हैं[1].
+
+Your verdict on the judge: ☐ agree ☐ disagree
+
+---
+
+## q030 · fact · Nadi Darshan pp. 40–47 (scanned Hindi).pdf
+
+**Q:** नाड़ी-दर्शन के अनुसार, पंचमहाभूतों के तीन प्रतिनिधियों (त्रिदोष) के नाम क्या हैं?
+
+**Gold:** वात, पित्त, कफ
+
+**Evidence:** “वे तीन ये हैं :---१-बात&, २-पित्त, ३-कफ३”
+
+**Our answer** — judge: **correct** (The system answer correctly identifies the three doshas (Vata, Pitta, Kapha) as stated in the reference and evidence, matching the key facts perfectly.)
+
+> नाड़ी‑दर्शन के अनुसार पाँच महाभूतों के तीन प्रतिनिधियों (त्रिदोष) के नाम हैं — **वात, पित्त, कफ**[1].
+
+**Plain-RAG answer** — judge: **correct**
+
+> नाड़ी‑दर्शन के अनुसार पंचमहाभूतों के तीन प्रतिनिधि (त्रिदोष) हैं :
+> 
+> - **वात**  
+> - **पित्त**  
+> - **कफ**  
+> 
+> [1][3]
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
@@ -70,286 +136,219 @@ Your verdict on the judge: ☐ agree ☐ disagree
 
 **Evidence:** “पित्त--अग्नि का”
 
-**Our answer** — judge: **correct** (The system answer correctly identifies the Pitta dosha as representing the fire Mahabhuta (Agni), which matches the reference answer.)
+**Our answer** — judge: **correct** (The system answer correctly identifies that the Pitta dosha represents the fire Mahabhuta (Agni), which matches the reference answer 'अग्नि' (Agni) and the evidence provided.)
 
 > In Nadi Darshan the Pitta dosha is said to represent the fire Mahabhuta (Agni)[2].
 
 **Plain-RAG answer** — judge: **correct**
 
-> In Nadi Darshan the dosha Pitta is linked to the fire element (Agni), i.e., the Mahabhuta of Agni (fire)[6].
+> In Nadi Darshan the dosha pitta is identified with the fire element (the Agni Mahābhūta)[6].
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
 ---
 
-## q035 · unanswerable · Nadi Darshan pp. 40–47 (scanned Hindi).pdf
+## q038 · cross_lang · Bhavaprakasha — गुडूची.md
 
-**Q:** How does the text describe the interaction between the five Panchamahabhutas and the modern concept of subatomic particles in the context of human physiology?
+**Q:** According to Bhavaprakasha, from whose death did the Amrita rain occur that led to the origin of Guduchi?
 
-**Gold:** (not in the document)
+**Gold:** रावण
 
-**Our answer** — judge: **partial** (The system provides a detailed interpretation of the relationship between the concepts rather than clearly stating that the specific interaction described in the question is not present in the documents.)
+**Evidence:** “हते तस्मिं सुरारातौ रावणे बलगर्धिते”
 
-> The passage explains that the human body is regarded as being built from the five Panchamahabhutas (earth, water, fire, air and ether). It notes that contemporary science has “made innumerable distinctions” within these five elements, but that modern knowledge is still limited to separating matter into things like earth, water, etc., and has not yet reached the level of the finer “sub‑atomic” particles that the traditional system does not address[1][1]. ⚠ partly supported In other words, the text portrays the Panchamahabhutas as the macroscopic building blocks of physiology, while modern physics’ sub‑atomic particles are considered a more detailed, presently unattained layer of analysis.
+**Our answer** — judge: **correct** (The system answer correctly identifies Ravana as the figure whose death led to the event, matching the reference answer 'रावण' (Ravana). The additional descriptive details do not contradict the core fact.)
+
+> The Amrita rain was sent after the death of Ravana – the arrogant king of Lanka and lord of the demons [1].
 
 **Plain-RAG answer** — judge: **correct**
 
-> The provided sources do not discuss the five Panchamahabhutas or relate them to modern sub‑atomic particles in any description of human physiology. They focus on other Ayurvedic concepts such as the doshas, Panchakarma, srotas, and various branches of Ayurvedic practice.
+> According to Bhavaprakāśa, the Amṛta‑rain that gave rise to guḍūcī fell after the death of Rāvaṇa, the demon‑king of Lanka [1].
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
 ---
 
-## q039 · fact · Bhavaprakasha — गुडूची.md
+## q041 · fact · Bhavaprakasha — गुडूची.md
 
-**Q:** भवाप्रकाश में गुडूची के रस (taste) के रूप में कौन से तीन स्वाद वर्णित हैं?
+**Q:** भवाप्रकाश के अनुसार, गुडूची का उद्भव किस स्थान से हुआ?
 
-**Gold:** कटु, तिक्ता, स्वादु
+**Gold:** जहाँ-जहाँ वानरों के शरीर से अमृत-बिंदु पृथ्वी पर गिरे
 
-**Evidence:** “गुडूची कटुका तिक्ता स्वादुपाका रसायनी”
+**Evidence:** “जहाँ-जहाँ वानरों के शरीर से अमृत-बिंदु पृथ्वी पर गिरे”
 
-**Our answer** — judge: **partial** (The system answer correctly identifies 'कटु' and 'तिक्त' but incorrectly lists 'मधुर' instead of the reference's 'स्वादु'.)
+**Our answer** — judge: **correct** (The system answer correctly identifies the origin of Guduchi as the places where the amrita drops from the monkeys' bodies fell on the earth, which matches the reference answer. The additional context about Indra is not contradictory to the core fact provided in the reference.)
 
-> भवाप्रकाश में गुडूची के रस के रूप में तीन स्वाद वर्णित हैं: **कटु, तिक्त और मधुर** [2]।
+> भवाप्रकाश के अनुसार, जब इन्द्र ने अमृत‑वर्षा से मारे गये वानरों को पुनः जीवित किया, तो वानरों के शरीर से गिरने वाले अमृत‑बिंदु जहाँ‑जहाँ पृथ्वी पर पड़े, उन स्थानों से ही ‘गुडूची’ का उद्भव हुआ[1]।
 
-**Plain-RAG answer** — judge: **partial**
+**Plain-RAG answer** — judge: **correct**
 
-> भवाप्रकाश में गुडूची के रस के तीन स्वाद इस प्रकार वर्णित हैं:
-> 
-> 1. **कड़वा (बिट्टर)** – रस का मुख्य स्वाद कड़वा बताया गया है[1]।  
-> 2. **कटु (पुंगेंट)** – गुडूची को “कटुका” कहा गया है, जिसका रस‑स्वाद कटु (काटु) है[5]।  
-> 3. **मधुर (स्वीट)** – विपाक (पाचन‑के‑बाद) मधुर बताया गया है, अर्थात् रस का अंत‑स्वाद मधुर है[5]।
+> भवाप्रकाश के अनुसार, जब इन्द्र ने अमृत‑वर्षा से मारे गये वानरों को पुनः जीवित किया, तो जहाँ‑जहाँ वह अमृत‑बिंदु पृथ्वी पर गिरा, उन स्थानों से ही ‘गुडूची’ का उद्भव हुआ[1].
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
 ---
 
-## q040 · cross_lang · Bhavaprakasha — गुडूची.md
+## q046 · cross_lang · Bhavaprakasha — गुडूची.md
 
-**Q:** Which three tastes are described for Guduchi in Bhavaprakasha?
+**Q:** What is the diameter of the leaves of Guduchi?
 
-**Gold:** कटु, तिक्ता, स्वादु
+**Gold:** 2–4 इंच
 
-**Evidence:** “गुडूची कटुका तिक्ता स्वादुपाका रसायनी”
+**Evidence:** “गोल-आकृति (व्यास 2–4 इंच)”
 
-**Our answer** — judge: **partial** (The system correctly identifies Katu and Tikta but incorrectly labels the third taste as Madhura (sweet) instead of Svadu (sweet taste) as specified in the reference, and provides incorrect English translations for Katu and Tikta.)
+**Our answer** — judge: **incorrect** (The reference answer states the diameter is 2–4 inches, while the system answer claims it is about 8 inches wide (or 4-9 inches long), which directly contradicts the reference facts.)
 
-> Bhavaprakāśa lists three rasas (tastes) for Guduchi:
-> 
-> * **Katu** – bitter (कटु)  
-> * **Tikta** – pungent/acerbic (तिक्त)  
-> * **Madhura** – sweet after‑taste (स्वादुपाका)  
-> 
-> These three tastes are given in the Guduchi description in Bhavaprakāśa [5] and are reflected in the Sanskrit verse that names “गुडूची कटुका तिक्ता स्वादुपाका” [6]. ⚠ partly supported
+> The sources describe the leaves of Guduchi as large, measuring roughly **4 – 9 inches long by about 8 inches wide** (i.e., a leaf “diameter” of about 8 inches)[1].
 
-**Plain-RAG answer** — judge: **incorrect**
+**Plain-RAG answer** — judge: **correct**
 
-> Bhavaprakasha describes Guduchi as having **two** primary tastes:  
-> 
-> * **Bitter (tikta)** – “Rasa (स्वाद): तिक्त”[3]  
-> * **Pungent (kaṭu)** – “Rasa (स्वाद): कटु”[3]  
-> 
-> No third taste is mentioned in the provided excerpts; the sources only cover these two tastes.
+> The leaves of Guduchi are described as round with a diameter of 2 – 4 inches[2]. (Source [1] also notes leaf size as 4 – 9 inches × 8 inches, but it does not give a specific diameter.)
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
 ---
 
-## q050 · cross_lang · Bhavaprakasha — गुडूची.md
+## q049 · fact · Bhavaprakasha — गुडूची.md
 
-**Q:** In the process of preparing Guduchi satva, under what conditions are the two satvas mixed and dried?
+**Q:** गुड़ूची के सत्व निर्माण प्रक्रम में, दोनों सत्वों को मिलाकर किस प्रकार की स्थिति में सुखाया जाता है?
 
 **Gold:** धूप या कम-ताप पर
 
 **Evidence:** “दोनों सत्व मिलाकर, **धूप** या कम-ताप पर सुखाएं”
 
-**Our answer** — judge: **incorrect** (The system answer incorrectly states 'in the sun' (धूप) instead of 'smoke' (धूप), which contradicts the reference and evidence.)
+**Our answer** — judge: **correct** (The system answer correctly identifies that the extracts are dried in the sun or at low temperature, which matches the reference answer and the evidence provided.)
 
-> The two satvas are combined and then allowed to dry **in the sun or on a low‑heat source** (i.e., under gentle heat)[1][5].
+> गुड़ूची के सत्व निर्माण के द्वितीय प्रक्रम में, दोनों सत्वों को मिलाकर **धूप या कम‑ताप पर सुखाया जाता है** [1]।
+
+**Plain-RAG answer** — judge: **correct**
+
+> गुड़ूची के सत्व निर्माण के द्वितीय प्रक्रम में, दोनों सत्वों को मिलाकर **धूप या कम‑ताप पर सुखाया** जाता है[1].
+
+Your verdict on the judge: ☐ agree ☐ disagree
+
+---
+
+## q060 · multi · Bhavaprakasha — गुडूची.md
+
+**Q:** गुडूची के प्राचीन वर्णन में 'कटुका' और 'तिका' शब्दों का आधुनिक आयुर्वेदिक गुणों (Rasa, Virya, etc.) के साथ क्या संबंध है?
+
+**Gold:** प्राचीन वर्णन 'कटुका' का संबंध आधुनिक 'Rasa (स्वाद)' तिक्त, कटु से है, जबकि 'तिका' का संबंध 'Virya (वीर्य)' उष्ण से है।
+
+**Evidence:** “कटुका | **Rasa (स्वाद)**: तिक्त, कटु | तिका | **Virya (वीर्य)**: उष्ण” | “गुडूची कटुका तिक्ता स्वादुपाका रसायनी”
+
+**Our answer** — judge: **correct** (The system answer correctly identifies that 'कटुका' relates to Rasa (Tikt, Katu) and 'तिका' relates to Virya (Ushna), which matches the key facts in the reference answer and the provided evidence.)
+
+> प्राचीन वर्णन में  
+> 
+> - **कटुका** को **Rasa (स्वाद)** के रूप में बताया गया है, जिसका अर्थ **तिक्त‑कटु** है। [1]  
+> - **तिका** को **Virya (वीर्य)** के रूप में वर्णित किया गया है, जिसका गुण **उष्ण** है। [1]
+
+**Plain-RAG answer** — judge: **correct**
+
+> प्राचीन वर्णन में **कटुका** को आधुनिक आयुर्वेदिक **Rasa (स्वाद)** से जोड़ा गया है, जिसका अर्थ *तिक्त‑कटु* है; तथा **तिका** को **Virya (वीर्य)** से, जिसका गुण *उष्ण* है[1]।
+
+Your verdict on the judge: ☐ agree ☐ disagree
+
+---
+
+## q084 · number · RFC 2324 — Hyper Text Coffee Pot Control Protocol.txt
+
+**Q:** According to the references in RFC 2324, what is the RFC number assigned to the 'Internet Cache Protocol (ICP), version 2'?
+
+**Gold:** 2186
+
+**Evidence:** “RFC 2186, September 1997”
+
+**Our answer** — judge: **correct** (The system answer correctly identifies the RFC number as 2186, which matches the reference answer and the evidence provided.)
+
+> The RFC number for “Internet Cache Protocol (ICP), version 2” is **RFC 2186**[1].
+
+**Plain-RAG answer** — judge: **error**
+
+> The reference lists “Internet Cache Protocol (ICP), version 2” as **RFC 2186**[1].
+
+Your verdict on the judge: ☐ agree ☐ disagree
+
+---
+
+## q113 · fact · 光合成 — Wikipedia (Japanese).txt
+
+**Q:** 植物の光化学反応において、狭義の光化学反応は主にどのような2つの過程に分けられるか？
+
+**Gold:** 非循環的電子伝達系と循環的電子伝達系
+
+**Evidence:** “非循環的電子伝達系と循環的電子伝達系の2つの過程に分けられる”
+
+**Our answer** — judge: **correct** (The system answer correctly identifies the two processes (non-cyclic and cyclic electron transport systems) as stated in the reference answer and evidence.)
+
+> 狭義の光化学反応は、  
+> 1. 非循環的電子伝達系（non‑cyclic electron transport）  
+> 2. 循環的電子伝達系（cyclic electron transport）  
+> の2つの過程に分けられます[4][2].
+
+**Plain-RAG answer** — judge: **correct**
+
+> 狭義の光化学反応は、**非循環的電子伝達系**と**循環的電子伝達系**の 2 つの過程に分けられます[4].
+
+Your verdict on the judge: ☐ agree ☐ disagree
+
+---
+
+## q115 · fact · 光合成 — Wikipedia (Japanese).txt
+
+**Q:** Z機構において、電子が光化学系Iに入ってからNADPを還元するために使われる前に、電子受容体によって作られたエネルギーは何に使われているか？
+
+**Gold:** チラコイドルーメンにプロトンを輸送する
+
+**Evidence:** “チラコイドルーメンにプロトンを輸送するのに使われている”
+
+**Our answer** — judge: **correct** (The system answer correctly identifies that the energy is used to transport protons into the thylakoid lumen, which matches the reference answer and the provided evidence.)
+
+> The energy generated by the electron acceptor is used to transport protons into the thylakoid lumen[1].
+
+**Plain-RAG answer** — judge: **correct**
+
+> The energy released when the electron is transferred to the electron‑acceptor molecules is used to pump protons into the thylakoid lumen (the thylakoid lumen’s proton pool). This proton‑pumping creates the chemiosmotic gradient that later drives ATP synthesis[1][4]
+
+Your verdict on the judge: ☐ agree ☐ disagree
+
+---
+
+## q128 · cross_lang · 光合成 — Wikipedia (Japanese).txt
+
+**Q:** In what year did the German scientist Karl Lohmann discover ATP?
+
+**Gold:** 1929年
+
+**Evidence:** “1929年 ドイツのカール・ローマンがATPを発見”
+
+**Our answer** — judge: **correct** (The system answer correctly identifies the year 1929 and the German scientist (referring to him as Karl Roman, which is a phonetic variation of the document's Karl Lohmann/Roman), aligning with the reference answer and evidence.)
+
+> The provided sources do not contain any information about a German scientist named Karl Lohmann discovering ATP. They do note that the German scientist Karl Roman discovered ATP in 1929 [2].
 
 **Plain-RAG answer** — judge: **partial**
 
-> The two satvas are combined and then allowed to dry **in the sun or at a low temperature** (i.e., gentle heat)[1].
+> The provided sources do not mention a German scientist named Karl Lohmann discovering ATP. They do note that ATP was discovered in 1929 by the German scientist Karl Roman [5].
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
 ---
 
-## q051 · fact · Bhavaprakasha — गुडूची.md
+## q148 · fact · Photosynthèse — Wikipedia (French).docx
 
-**Q:** भवाप्रकाश के अनुसार गुडूची के विपाक (Vipaka) का स्वरूप क्या है?
+**Q:** Pourquoi les plantes en C3 ne peuvent-elles pas pousser dans les zones trop chaudes ?
 
-**Gold:** मधुर
+**Gold:** Parce que l'activité oxygénase de la Rubisco augmente avec la température par rapport à l'activité carboxylase, rendant la photorespiration prépondérante sur la fixation du carbone.
 
-**Evidence:** “**Vipaka (विपाक)**: मधुर”
+**Evidence:** “l'activité oxygénase de la Rubisco augmente avec la température par rapport à l'activité carboxylase”
 
-**Our answer** — judge: **correct** (The system answer correctly identifies the Vipaka as 'Madhura' (sweet), which matches the reference answer and the provided evidence.)
+**Our answer** — judge: **correct** (The system answer correctly identifies the key mechanism from the reference: the increase in Rubisco's oxygenase activity relative to carboxylase activity at high temperatures, leading to predominant photorespiration. The additional details about stomata and water loss are biologically accurate and do not contradict the reference.)
 
-> भवाप्रकाश के अनुसार गुडूची का विपाक “मधुर” है [2][3][6]।
+> Les plantes en C3 ne supportent pas les zones très chaudes parce que, à haute température, l’activité oxygénase de la Rubisco augmente plus rapidement que son activité carboxylase ; la photorespiration devient alors dominante sur la fixation du carbone, entraînant une perte nette de carbone et d’azote pour la plante. De plus, dans les milieux chauds et secs, les stomates se ferment pour limiter la perte d’eau, ce qui réduit l’entrée de CO₂, diminue le rapport CO₂/O₂ et accentue encore la photorespiration[1]. ⚠ partly supported
 
 **Plain-RAG answer** — judge: **correct**
 
-> भवाप्रकाश के अनुसार गुडूची का विपाक — मधुर है[2]।
-
-Your verdict on the judge: ☐ agree ☐ disagree
-
----
-
-## q054 · cross_lang · Bhavaprakasha — गुडूची.md
-
-**Q:** In Bhavaprakasha, which doshas are mentioned as being regulated and controlled by the Karma (action) of Guduchi?
-
-**Gold:** दोष-त्रय (कफ, पित्त, वायु)
-
-**Evidence:** “**Karma (कर्म)**: दोष-त्रयानुलोमन, संग्रहण”
-
-**Our answer** — judge: **correct** (The system answer correctly identifies the three doshas (vata, pitta, kapha) as the ones regulated by the Karma of Guduchi, which matches the reference answer's 'dosha-traya'.)
-
-> In Bhavaprakāśa the Karma (“action”) of Guduchi is said to regulate the three doshas—**vāta, pitta and kapha**[1].
-
-**Plain-RAG answer** — judge: **correct**
-
-> In Bhavaprakāśa the action (Karma) of Guduchi is said to regulate the three doshas—**vāta, pitta and kapha**[2][3].
-
-Your verdict on the judge: ☐ agree ☐ disagree
-
----
-
-## q063 · overview · Bhavaprakasha — गुडूची.md
-
-**Q:** Give me an overview of “Bhavaprakasha — गुडूची.md”: what is it about and what are its main parts?
-
-**Gold:** Main parts: गुडूची
-
-**Our answer** — judge: **correct** (The answer correctly identifies the document as being about Guduchi (Tinospora cordifolia) and provides a detailed overview of its contents, which aligns with the single main part listed in the reference.)
-
-> **भवप्रकाश — गुडूची.md** एक विस्तृत विवरण है जो गुडूची (Tinospora cordifolia) के विभिन्न पहलुओं को समेटे हुए है। मुख्य रूप से यह निम्न भागों में विभाजित है:
-> 
-> 1. **पौराणिक उत्पत्ति** – राम द्वारा रावण पर विजय और अमृत वर्षा से जुड़ी कथा के माध्यम से गुडूची की उत्पत्ति का वर्णन [1]।  
-> 2. **नामावली** – मधुपर्णी, अमृतवल्लरी आदि सहित बीस से अधिक संस्कृत‑हिंदी नामों की सूची [1]।  
-> 3. **गुणधर्म** – रस (कड़वा, तीखा), वीर्य (उष्ण), विपाक (मीठा) की विस्तृत विवेचना [1]।  
-> 4. **औषधीय क्रियाएँ** – ज्वर, कफ, अतिसार, मधुमेह, कुष्ठ रोग तथा अन्य दोष‑संबंधी रोगों में लाभ [1]।  
-> 5. **विशिष्ट तैयारियाँ** – पाउडर (१‑३ माष), काढ़ा (४८ तोला), सत्‍व (५‑१५ रति) आदि मात्रा‑निर्देश, तथा अनन्तमूल, पिप्पली, आँवला के साथ संयोजन [1]।  
-> 6. **आधुनिक फाइटोकेमिस्ट्री** – गिलोइन, गिलोइनिन, गिलोस्टेरोल, बर्बेरिन आदि रासायनिक घटकों का उल्लेख [1]।  
-> 
-> इन भागों के माध्यम से यह दस्तावेज़ गुडूची के पौराणिक, पारम्परिक एवं आधुनिक वैज्ञानिक पहलुओं को संक्षिप्त रूप में प्रस्तुत करता है।
-
-**Plain-RAG answer** — judge: **partial**
-
-> **भवप्रकाश — गुडूची.md** एक संकलित दस्तावेज़ है जो आयुर्वेदिक औषधि गुडूची (Tinospora cordifolia) के विभिन्न पहलुओं को व्यवस्थित रूप से प्रस्तुत करता है।  
-> 
-> 1. **औषधीय प्रयोग (हिन्दी व्याख्या › औषधीय प्रायोग)** – मूल एवं कण्ड (काण्ड) के उपयोग, ताज़ा कण्ड की विशेषताएँ, स्वाद‑गंध, कटाई‑शोधन विधि तथा सर्वोत्तम प्रयोग की सलाह देता है[1]।  
-> 2. **सारांश** – गुडूची को “अमरत्व का प्रायोगिक संकेत” के रूप में वर्णित करता है; उत्पत्ति, वैदिक नाम, गुण (कटु‑तिक्त‑मधुर‑विपाक, उष्णवीर्य), क्रम (संग्रहण‑शोधन‑काथ‑सत्व) तथा प्रमुख रोगों (जीर्ण‑ज्वर, कामला, प्रमेह आदि) में प्रयोग का उल्लेख करता है[2]।  
-> 3. **वृक्ष एवं पादप‑चित्र** – पौधे की वनस्पति‑विवरण (लता, पत्ते, फूल, फल, बीज) तथा उसका प्राकृतिक आवास बताता है[3]।  
-> 4. **प्रमाणित औषधीय कर्म (गुण › प्रमाणित औषधीय कर्म)** – विभिन्न रोगों (वात‑पित्त‑कफ, दाह, मधुमेह, कास, प्रमेह, कामला, कुष्ठ, ज्वर, कृमी आदि) पर गुडूची के उपचारात्मक प्रभावों की सूची देता है[4]।  
-> 5. **गुण तालिका (गुण › प्राचीन / संशोधित)** – रस, वीर्य, विपाक, गुण, कर्म, धातु‑प्रसाद, दोषहर, रसायन, अग्निदीपनी, विषघ्न आदि आयुर्वेदिक गुणों को पारम्परिक वर्णन और आधुनिक पूरक व्याख्या के साथ सारणीबद्ध करता है[6]।  
-> 
-> इन मुख्य भागों के माध्यम से दस्तावेज़ गुडूची की औषधीय महत्ता, वनस्पति‑विज्ञान, रासायनिक‑गुण और क्लिनिकल उपयोग को एक ही स्रोत में संक्षिप्त रूप से प्रस्तुत करता है।
-
-Your verdict on the judge: ☐ agree ☐ disagree
-
----
-
-## q064 · fact · The Gift of the Magi — O. Henry.txt
-
-**Q:** In O. Henry's 'The Gift of the Magi', what item did Della purchase for Jim with the money she received from selling her hair?
-
-**Gold:** A platinum fob chain
-
-**Evidence:** “It was a platinum fob chain simple and chaste in design”
-
-**Our answer** — judge: **incorrect** (The system answer incorrectly identifies the gift as tortoise-shell combs, whereas the reference and evidence state it was a platinum fob chain.)
-
-> Della used the money from selling her hair to buy Jim a set of beautiful tortoise‑shell combs (the “combs” she had long admired) as his Christmas present[5]. ⚠ not found in the sources
-
-**Plain-RAG answer** — judge: **incorrect**
-
-> The provided sources do not state what Della bought for Jim with the money she received for her hair. They describe her selling the hair, receiving $20, and searching the stores for a gift, and they note that Jim’s prized possession is his gold watch, but they do not specify the item she purchased.
-
-Your verdict on the judge: ☐ agree ☐ disagree
-
----
-
-## q085 · multi · RFC 2324 — Hyper Text Coffee Pot Control Protocol.txt
-
-**Q:** In the HTCPCP protocol, what specific request header triggers the 406 Not Acceptable response, and what was the specific RPC mechanism used in the first web-based coffee pot monitoring application at Cambridge University?
-
-**Gold:** The 406 Not Acceptable response may be returned if the operator cannot comply with the Accept-Addition request. The first web-based coffee pot monitoring application at Cambridge University used the MSRPC2 RPC mechanism.
-
-**Evidence:** “cannot comply with the Accept-Addition request” | “first application to use a new RPC mechanism designed in the Cambridge Computer Laboratory - MSRPC2”
-
-**Our answer** — judge: **correct** (The system answer correctly identifies the Accept-Additions header (noting the slight spelling variation which is acceptable) and the MSRPC2 mechanism, matching all key facts in the reference answer.)
-
-> - In HTCPCP, a **406 Not Acceptable** response may be returned when the request contains an **`Accept-Additions`** header that the coffee‑pot operator cannot satisfy [1][5].  
-> - The first web‑based coffee‑pot monitor at Cambridge University used the **MSRPC2** remote‑procedure‑call mechanism (running over the MSNL network layer) [6].
-
-**Plain-RAG answer** — judge: **partial**
-
-> The HTCPCP specification says that a server may return **406 Not Acceptable** when it cannot satisfy the **`Accept-Additions`** request header — i.e., when the coffee‑pot operator cannot comply with the “Accept‑Addition” request [3].
-> 
-> The sources provided do not contain any information about the RPC mechanism used in the first web‑based coffee‑pot monitoring application at Cambridge University, so that detail cannot be answered from the given material.
-
-Your verdict on the judge: ☐ agree ☐ disagree
-
----
-
-## q119 · number · 光合成 — Wikipedia (Japanese).txt
-
-**Q:** カルビン回路が3回転した結果、生成されるグリセルアルデヒド3-リン酸の分子数はいくつですか？
-
-**Gold:** 1分子
-
-**Evidence:** “1分子のグリセルアルデヒド3-リン酸を生成する”
-
-**Our answer** — judge: **correct** (The system answer correctly states that 1 molecule of glyceraldehyde 3-phosphate is produced after 3 turns of the Calvin cycle, which matches the reference answer.)
-
-> カルビン回路が3回転すると、1分子のグリセルアルデヒド3‑リン酸が生成します[1].
-
-**Plain-RAG answer** — judge: **correct**
-
-> カルビン回路が3回転すると、1分子のグリセルアルデヒド3‑リン酸が生成します[1].
-
-Your verdict on the judge: ☐ agree ☐ disagree
-
----
-
-## q120 · cross_lang · 光合成 — Wikipedia (Japanese).txt
-
-**Q:** How many molecules of glyceraldehyde 3-phosphate are produced as a result of the Calvin cycle turning three times?
-
-**Gold:** 1分子
-
-**Evidence:** “1分子のグリセルアルデヒド3-リン酸を生成する”
-
-**Our answer** — judge: **incorrect** (The system answer claims six molecules are generated, whereas the reference answer states that one molecule is produced (net output) after three turns of the Calvin cycle.)
-
-> Six molecules of glyceraldehyde‑3‑phosphate are generated when the Calvin cycle runs three times (three CO₂ are fixed, giving six G3P, of which five are recycled to regenerate RuBP)[1].
-
-**Plain-RAG answer** — judge: **incorrect**
-
-> Six molecules of glyceraldehyde‑3‑phosphate are generated when the Calvin cycle runs three times; five of these are used to regenerate ribulose‑1,5‑bisphosphate and one remains available for biosynthesis[1][4].
-
-Your verdict on the judge: ☐ agree ☐ disagree
-
----
-
-## q130 · multi · 光合成 — Wikipedia (Japanese).txt
-
-**Q:** 酸素発生型光合成の最大の特徴である電子供与体として用いられる物質と、光合成速度を決定する外的要因のうち、温度が限定要因になる例として挙げられている条件は何か。
-
-**Gold:** 電子供与体として用いられる物質は水分子であり、温度が限定要因になる例は10℃の環境下で光の照度を強めた際に速度の上昇が停止する照度が30℃の場合より低い場合である。
-
-**Evidence:** “酸素発生型光合成経路の最大の特徴は「水分子を電子供与体として用いることができる」” | “10 ℃の時は温度が光合成速度の限定要因になっている”
-
-**Our answer** — judge: **partial** (The system answer correctly identifies water as the electron donor and the 10°C condition, but it omits the specific comparative detail from the reference answer regarding the light intensity threshold being lower than that at 30°C.)
-
-> - 電子供与体として用いられる物質は **水分子（H₂O）** です[2]。  
-> - 温度が限定要因になる例は、**10 ℃の環境下で他の条件を同じにし、光強度を上げても光合成速度が上昇しなくなる** 場合です（このとき温度が光合成速度の限定要因になる）[1].
-
-**Plain-RAG answer** — judge: **correct**
-
-> - 電子供与体として用いられる物質は **水分子（H₂O）** です[2]。  
-> - 温度が限定要因になる例は、**10 ℃の環境下で光強度を上げても光合成速度の上昇が止まり、30 ℃ではより高い光強度まで速度が上がる** という状況です。すなわち、同一の光・CO₂条件で低温（10 ℃）が光合成速度を制限するケースです[1].
+> Les plantes en C3 sont limitées dans les zones très chaudes parce que, avec l’augmentation de la température, l’activité oxygénase de la Rubisco croît plus vite que son activité carboxylase ; la photorespiration devient alors dominante, entraînant une perte nette de carbone et d’azote pour la plante. De plus, dans les milieux chauds et secs, les stomates se ferment pour limiter la perte d’eau, ce qui diminue l’entrée de CO₂, abaisse le rapport CO₂/O₂ et accentue encore la photorespiration[1].
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
@@ -363,77 +362,84 @@ Your verdict on the judge: ☐ agree ☐ disagree
 
 **Evidence:** “l'activité oxygénase de la Rubisco augmente avec la température par rapport à l'activité carboxylase”
 
-**Our answer** — judge: **correct** (The system answer correctly identifies that high temperatures increase Rubisco's oxygenase activity relative to carboxylase activity, leading to dominant photorespiration, which matches the reference answer and includes valid additional details.)
+**Our answer** — judge: **correct** (The system answer correctly identifies the core mechanism from the reference: that high temperatures increase the oxygenase activity of Rubisco relative to its carboxylase activity, leading to dominant photorespiration. The additional details about stomata and CO2/O2 ratios are consistent with the primary cause and do not contradict the reference.)
 
-> C3 plants struggle in very hot regions because high temperature makes the oxygen‑ase activity of Rubisco dominate over its carboxylase activity, so photorespiration becomes the main reaction and the plant loses carbon (and nitrogen) instead of fixing it. In hot, dry conditions the plants also close their stomata to save water, which lowers leaf CO₂ and raises the O₂/CO₂ ratio, further increasing photorespiration and reducing carbon fixation[3]. This combination of temperature‑driven Rubisco oxygenation and stomatal closure prevents C3 plants from growing well in very hot areas[2][6].
+> C3 plants are limited in very hot areas because high temperature makes the oxygen‑ase activity of Rubisco rise faster than its carboxyl‑ase activity, so photorespiration becomes dominant and the plant loses net carbon (and nitrogen) [3]. In hot, dry conditions the plants also close their stomata to save water, which lowers leaf CO₂ and raises O₂, further increasing the CO₂/O₂ ratio that favours photorespiration [2][6]. ⚠ partly supported
 
 **Plain-RAG answer** — judge: **correct**
 
-> C3 plants struggle in very hot regions because high temperatures make Rubisco act more as an oxygenase than a carboxylase, so photorespiration dominates carbon fixation and the plant loses carbon and nitrogen. In hot, dry conditions the plants also close their stomata to save water, which lowers internal CO₂ and raises the O₂/CO₂ ratio, further increasing photorespiration and reducing net carbon gain[3][4].
+> C3 plants are limited in very hot regions because high temperatures make the oxygen‑ase activity of Rubisco dominate over its carboxylase activity, so photorespiration becomes the main reaction and the plant loses carbon (and nitrogen) instead of fixing it [3]. In hot, dry conditions the plants also close their stomata to save water, which lowers internal CO₂ and raises the CO₂/O₂ ratio, further increasing Rubisco’s oxygenation and photorespiration [4].
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
 ---
 
-## q154 · number · Photosynthèse — Wikipedia (French).docx
+## q170 · cross_lang · आयुर्वेद — Wikipedia (Hindi).txt
 
-**Q:** Selon le document, quelle est l'approximation du flux d'énergie capté par la photosynthèse à l'échelle planétaire ?
+**Q:** In Ayurveda, what is the treatment called that helps the soul attain liberation from the disease of birth, death, and worldly bonds?
 
-**Gold:** 100 térawatts
+**Gold:** नैतिष्ठकी चिकित्सा
 
-**Evidence:** “Le flux d’énergie capté par la photosynthèse (à l’échelle planétaire) est immense, approximativement 100 térawatts”
+**Evidence:** “जो आयुर्वेद में नैतिष्ठकी चिकित्सा कही गयी है”
 
-**Our answer** — judge: **correct** (The system answer correctly identifies the approximate flux as 100 terawatts (10^2 TW), which matches the reference answer and the evidence provided in the document.)
+**Our answer** — judge: **correct** (The system answer provides the term 'नैष्ठिकी चिकित्सा' (Naiṣṭhika Chikitsā), which is a standard spelling variant of the reference answer 'नैतिष्ठकी चिकित्सा' (Naitiṣṭhakī Chikitsā). The context and definition match the reference and evidence perfectly.)
 
-> Le document indique que le flux d’énergie capté par la photosynthèse à l’échelle planétaire est de l’ordre de 10² térawatts : environ 100 TW selon la section « Production d’oxygène et captage d’énergie » [2], et autour de 130 TW dans la partie générale sur la puissance moyenne globale [1][5].
+> The treatment is called **नैष्ठिकी चिकित्सा (Naiṣṭhika Chikitsā)**, which is described as the Ayurvedic therapy that enables the soul to be freed from the disease of birth, death and worldly bonds[1][3]
 
-**Plain-RAG answer** — judge: **correct**
+**Plain-RAG answer** — judge: **incorrect**
 
-> Le flux d’énergie capté par la photosynthèse à l’échelle planétaire est approximativement de **100 térawatts**[2].
-
-Your verdict on the judge: ☐ agree ☐ disagree
-
----
-
-## q179 · fact · आयुर्वेद — Wikipedia (Hindi).txt
-
-**Q:** आयुर्वेद के भूतविद्या विभाग में देवाधि ग्रहों द्वारा उत्पन्न विकारों के लिए किस प्रकार के कर्म की व्यवस्था की जाती है?
-
-**Gold:** शान्तिकर्म
-
-**Evidence:** “प्राणियों के लिए शान्तिकर्म की व्यवस्था की जाती है”
-
-**Our answer** — judge: **correct** (The system answer correctly identifies 'शान्तिकर्म' as the prescribed remedy, matching the reference answer and supported by the evidence.)
-
-> आयुर्वेद के भूतविद्या (ग्रहचिकित्सा) विभाग में देव‑अधि ग्रहों द्वारा उत्पन्न विकारों के लिये **शान्तिकर्म** (शांति‑संधान के लिये किए जाने वाले कर्म) की व्यवस्था की गई है[1][3]
-
-**Plain-RAG answer** — judge: **correct**
-
-> आयुर्वेद के भूतविद्या विभाग में देवाधि (देव, असुर, पूतना आदि) ग्रहों द्वारा उत्पन्न विकारों के लिये **शान्तिकर्म** की व्यवस्था की जाती है[1].
+> The provided sources do not mention any specific Ayurvedic treatment that is described as helping the soul attain liberation from the disease of birth, death, and worldly bonds.  
+> 
+> What the sources do cover includes:
+> 
+> * A general description of Ayurveda as a traditional medical system and its various therapies such as herbal medicines, diet, meditation, yoga, massage, and oils [1].  
+> * Basic philosophical ideas and the emphasis on moderation in Ayurveda [2].  
+> * The holistic view of physical, mental, and personality elements and concepts like channels (srotas) that can be opened by oil massage and fomentation [3].  
+> * References to further reading on Ayurveda’s cultural and historical context [4].  
+> * Details on bodily components (dhatus, doshas, elements, gunas) in Ayurvedic theory [5].  
+> * Information about the Sushruta Samhita, its attribution, and the dosha framework [6].  
+> 
+> No source provides the name of a treatment aimed at soul liberation from birth, death, and worldly bonds.
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
 ---
 
-## q194 · number · RAPTOR paper (arXiv 2401.18059).pdf
+## q193 · number · RAPTOR paper (arXiv 2401.18059).pdf
 
-**Q:** What is the METEOR score achieved by RAPTOR paired with UnifiedQA on the NarrativeQA dataset?
+**Q:** According to the RAPTOR paper, how many language models were used in the controlled experiments to demonstrate RAPTOR's effectiveness?
 
-**Gold:** 19.1
+**Gold:** 3
 
-**Evidence:** “RAPTOR + UnifiedQA
-30.8
-23.5
-6.4
-19.1”
+**Evidence:** “Controlled experiments with three language models”
 
-**Our answer** — judge: **correct** (The system answer correctly identifies the METEOR score as 19.1, which matches the reference answer exactly.)
+**Our answer** — judge: **correct** (The system answer correctly identifies that three language models were used, matching the reference answer and the evidence provided. The additional details about the specific models are consistent with the count.)
 
-> RAPTOR paired with UnifiedQA achieves a METEOR score of **19.1** on the NarrativeQA dataset[1].
+> The RAPTOR paper states that the controlled experiments were run with **three language models** – UnifiedQA, GPT‑3, and GPT‑4[6].
+
+**Plain-RAG answer** — judge: **incorrect**
+
+> The RAPTOR paper states that **four language models** were used in its controlled experiments [2].
+
+Your verdict on the judge: ☐ agree ☐ disagree
+
+---
+
+## q209 · number · wiki-en-ayurveda.txt
+
+**Q:** According to Ayurveda, how many dhatus (tissues) compose the human body?
+
+**Gold:** seven
+
+**Evidence:** “The seven dhatus are chyle (rasa), blood (rakta), muscles (māmsa), fat (meda), bone (asthi), marrow (majja), and semen (shukra).”
+
+**Our answer** — judge: **correct** (The system answer correctly identifies that the human body is composed of seven dhatus, which matches the reference answer and the provided evidence perfectly. The citation markers are irrelevant to the factual accuracy.)
+
+> Ayurveda states that the human body is composed of **seven dhatus (tissues)**[1][2].
 
 **Plain-RAG answer** — judge: **correct**
 
-> RAPTOR paired with UnifiedQA achieves a METEOR score of **19.1** on the NarrativeQA dataset[1].
+> Ayurveda states that the human body is composed of **seven dhatus (tissues)**[1].
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
@@ -447,104 +453,119 @@ Your verdict on the judge: ☐ agree ☐ disagree
 
 **Evidence:** “As of 2018, the NCCIH reported that 240,000 Americans were using Ayurvedic medicine.”
 
-**Our answer** — judge: **correct** (The system answer correctly identifies the number of Americans using Ayurvedic medicine as 240,000, matching the reference answer.)
+**Our answer** — judge: **correct** (The system answer correctly identifies the number 240,000 and the year 2018, matching the reference answer and evidence exactly.)
 
-> As of 2018, the National Center for Complementary and Integrative Health reported that **approximately 240,000 Americans** were using Ayurvedic medicine[1].
+> As of 2018, the National Center for Complementary and Integrative Health reported that 240,000 Americans were using Ayurvedic medicine[1].
 
 **Plain-RAG answer** — judge: **correct**
 
-> As of 2018, the National Center for Complementary and Integrative Health reported that about 240,000 Americans were using Ayurvedic medicine[1].
+> As of 2018, the National Center for Complementary and Integrative Health reported that **240,000 Americans** were using Ayurvedic medicine[1].
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
 ---
 
-## q221 · multi · wiki-en-ayurveda.txt
+## q219 · number · wiki-en-ayurveda.txt
 
-**Q:** How does Ayurveda define the composition of the human body in terms of tissues and humours, and how does it view the relationship between physical, mental, and personality elements?
+**Q:** In what year was the Native Medical Institution (NMI) set up in India?
 
-**Gold:** Ayurveda states the body is composed of tissues (dhatus), waste (malas), and humoral fluids (doshas). It regards physical existence, mental existence, and personality as three separate elements of a whole person that can influence each other.
+**Gold:** 1822
 
-**Evidence:** “human body is composed of tissues (dhatus), waste (malas), and humoral fluids (doshas)” | “physical existence, mental existence, and personality as three separate elements of a whole person”
+**Evidence:** “A Native Medical Institution (NMI) was set up in 1822”
 
-**Our answer** — judge: **correct** (The system answer accurately includes all key facts from the reference (tissues, waste, humors, and the three interacting elements of physical, mental, and personality) and adds correct specific details without contradiction.)
+**Our answer** — judge: **correct** (The system answer correctly identifies the year 1822, which matches the reference answer and the evidence provided.)
 
-> Ayurveda teaches that the human body is built from **seven basic tissues (dhatus)** – chyle (rasa), blood (rakta), muscle (māmsa), fat (meda), bone (asthi), marrow (majja) and semen (shukra) – together with waste products (malas) and the three **humoral fluids (doshas)** – vata (air), pitta (fire/bile) and kapha (earth‑water) [1].  
-> 
-> The same tradition holds that a person is a **whole made of three distinct but interacting layers**: the physical body, the mind and the personality (prakriti). Each layer can affect the others, and health is maintained by keeping the physical, mental and personality elements in balance [2]. ⚠ partly supported
+> The Native Medical Institution (NMI) was set up in **1822** [1].
 
 **Plain-RAG answer** — judge: **correct**
 
-> Ayurveda teaches that the human body is built from three inter‑related layers:
-> 
-> * **Tissues (dhatus)** – the seven nourishing substances that form the body: chyle (rasa), blood (rakta), muscle (māmsa), fat (meda), bone (asthi), marrow (majja) and semen (shukra) [1].  
-> * **Humoral fluids (doshas)** – three elemental “humours” that regulate the dhatus and waste: vata (air), pitta (bile/fire) and kapha (phlegm/earth‑water) [1][2].  
-> 
-> In addition to these physical components, Ayurveda regards **physical existence, mental existence and personality** as three distinct but mutually influencing elements of a single person [3]. The balance of the doshas not only determines physical constitution (prakriti) but also shapes mental traits and temperament, linking the body’s tissues, the humours, and the individual’s personality [2][4].
+> The Native Medical Institution (NMI) was established in **1822** [1].
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
 ---
 
-## q232 · fact · wiki-en-photosynthesis.txt
+## q225 · overview · wiki-en-ayurveda.txt
 
-**Q:** In the context of prokaryotic photosynthesis, which group is identified as the only one performing oxygenic photosynthesis?
+**Q:** Give me an overview of “wiki-en-ayurveda.txt”: what is it about and what are its main parts?
 
-**Gold:** Cyanobacteria
+**Gold:** Main parts: Etymology; Eight components; Principles and terminology; Practice; Current status; Classification and efficacy; History; See also; Footnotes; References; Further reading; External links
 
-**Evidence:** “Cyanobacteria, the only prokaryotes performing oxygenic photosynthesis”
+**Our answer** — judge: **correct** (The answer correctly identifies the document as the Wikipedia article on Ayurveda and accurately lists the main sections (Etymology, Eight components, Principles, Practice, Current status, Classification, History, etc.), matching the provided top-level parts.)
 
-**Our answer** — judge: **correct** (The system answer correctly identifies Cyanobacteria as the only prokaryotic group performing oxygenic photosynthesis, matching the reference answer and evidence.)
+> The file **wiki‑en‑ayurveda.txt** is the Wikipedia article on Ayurveda – the traditional Indian system of medicine. It explains that Ayurveda is presented as a “knowledge of longevity,” describes its claimed health benefits, its widespread practice in India and Nepal, and notes the commercial market and scientific criticism that labels much of its theory and many products as pseudoscientific (e.g., heavy‑metal contamination and lack of evidence for cancer cures) [1].
+> 
+> The article is organized into several sections:
+> 
+> * **Etymology** – origin of the Sanskrit term āyurveda (“knowledge of life/longevity”) [1].
+> * **Eight components** – the classical division of the physician’s art into eight aṅga (e.g., Kāyachikitsā, Kaumāra‑bhṛtya, Śalyatantra, etc.) [1].
+> * **Principles and terminology** – core philosophy, body concepts (dhatus, doshas, gunas, elements) and their relation to other Indian philosophies [1].
+> * **Practice** – description of the three interacting elements of a person, disease model (blocked srotas), diagnostic methods, and typical treatments (oil massage, Swedana, surgery) [1].
+> * **Current status** – modern education (BAMS), regulatory bodies (Ministry of AYUSH), and the distinction between modern (Indian) and global Ayurveda [1].
+> * **Classification and efficacy** – critique of scientific validity, reports of toxic heavy‑metal contamination, and lack of evidence for many claimed cures [1].
+> * **History** – contested origins, early textual sources (Charaka, Sushruta, Bhela Samhitas), and legendary attributions [1]. ⚠ not found in the sources
+> * **See also**, **Footnotes**, and **References** – auxiliary sections for related topics and source citations [1]. ⚠ not found in the sources
+> 
+> Thus the document provides a comprehensive overview of Ayurveda’s definition, historical development, theoretical framework, clinical practice, contemporary status, and the scientific controversies surrounding it.
 
-> Cyanobacteria are the sole prokaryotic group that carries out oxygenic photosynthesis[1].
+**Plain-RAG answer** — judge: **partial**
 
-**Plain-RAG answer** — judge: **correct**
-
-> Cyanobacteria are the only prokaryotic group that performs oxygenic photosynthesis[1].
+> **Overview**  
+> The file *wiki‑en‑ayurveda.txt* is a Wikipedia‑style article on Ayurveda, the traditional system of medicine that originated on the Indian subcontinent. It explains the meaning of the name, its historical development, the major branches of the discipline, and how it is practiced today [2][6][5].
+> 
+> **Main parts (as reflected in the article’s sections)**  
+> 
+> 1. **Etymology** – explains that “āyurveda” combines the Sanskrit words *āyus* (“life, longevity”) and *veda* (“knowledge”) → “knowledge of longevity” [6].  
+> 
+> 2. **Historical background / early practice** – describes early herbal formulations, the later addition of minerals and metals after the 11th century, and the ancient surgical techniques recorded in classical texts [5].  
+> 
+> 3. **Eight components (branches)** – lists the traditional eight divisions of classical Ayurveda, e.g., Bhūtavidyā, Agadatantra/Vishagara‑vairodh Tantra, Rasāyantantra, Vājīkaraṇatantra, etc. [1]  
+> 
+> 4. **Practice – Treatment and prevention** – outlines contemporary emphases such as building metabolic health, digestion, exercise, yoga, meditation, dinacharya (daily routines), hygiene practices, and dietary recommendations [3].  
+> 
+> 5. **Further reading** – provides a bibliography of scholarly works on Ayurveda and its cultural contexts [4].  
+> 
+> These sections together give a concise description of what Ayurveda is, its linguistic roots, its historical evolution, its principal scholarly divisions, and how it is applied in modern practice.
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
 ---
 
-## q239 · multi · wiki-en-photosynthesis.txt
+## q246 · fact · alice-in-wonderland.txt
 
-**Q:** How does the photosynthetic rate of maize, which exhibits Kranz anatomy, compare to the net photosynthetic rates of terrestrial plants studied using infrared gas analysis in the late 1940s, and what is the primary product of the terminal redox reaction in the Z-scheme?
+**Q:** In Chapter IV of Alice in Wonderland, what did Alice hope the bottle would do to her size?
 
-**Gold:** Maize has a photosynthetic rate of 40 μmol CO2·m−2·s−1, which is significantly higher than the 10 to 13 μmol CO2·m−2·s−1 observed in other terrestrial plants. The primary product of the terminal redox reaction in the Z-scheme is NADPH.
+**Gold:** make her grow large again
 
-**Evidence:** “field grown maize was reported to have much greater leaf photosynthetic rates of 40 μmol CO2·m−2·s−1” | “NADPH is a product of the terminal redox reaction in the Z-scheme”
+**Evidence:** “I do hope it’ll make me grow large again”
 
-**Our answer** — judge: **correct** (The system answer correctly identifies the photosynthetic rate of maize (38-40 μmol CO2·m−2·s−1) as significantly higher than the 10-13 μmol CO2·m−2·s−1 observed in other plants, and correctly identifies NADPH as the primary product of the terminal redox reaction in the Z-scheme.)
+**Our answer** — judge: **correct** (The system answer correctly states that Alice hoped the bottle would make her grow large again, which matches the reference answer and the evidence provided.)
 
-> Maize leaves that have Kranz anatomy photosynthesize at about 38–40 μmol CO₂ m⁻² s⁻¹, which is roughly three‑to‑four times the 10–13 μmol CO₂ m⁻² s⁻¹ net rates recorded for terrestrial plants using infrared gas analysis in the late 1940s[1][1].  
-> 
-> The terminal redox step of the Z‑scheme reduces NADP⁺ to NADPH, so NADPH is the primary product of that reaction[2].
+> Alice hoped that drinking the bottle would make her grow large again, because she was tired of being “such a tiny little thing.”[1]
 
 **Plain-RAG answer** — judge: **correct**
 
-> Maize leaves that have Kranz anatomy photosynthesize at about **38–40 μmol CO₂ m⁻² s⁻¹**[3], which is roughly **three‑to‑four times higher** than the **10–13 μmol CO₂ m⁻² s⁻¹** net rates recorded for terrestrial plants using infrared gas analysis in the late 1940s[1].  
-> 
-> The terminal redox reaction of the Z‑scheme yields **NADPH** as its primary product[2].
+> Alice hoped that drinking the bottle would make her grow large again, because she was “quite tired of being such a tiny little thing”[5].
 
 Your verdict on the judge: ☐ agree ☐ disagree
 
 ---
 
-## q261 · fact · rfc9110-http-semantics.txt
+## q265 · fact · rfc9110-http-semantics.txt
 
-**Q:** According to the HTTP semantics specification, what action must a recipient take if it processes an "http" URI with an empty host identifier?
+**Q:** According to HTTP semantics, why should a server not use the From header field for access control or authentication?
 
-**Gold:** It must reject it as invalid.
+**Gold:** Because its value is expected to be visible to anyone receiving or observing the request and is often recorded within logfiles without any expectation of privacy.
 
-**Evidence:** “MUST reject it as invalid”
+**Evidence:** “since its value is expected to be visible to anyone receiving or observing the request and is often recorded within”
 
-**Our answer** — judge: **correct** (The system answer correctly states that the recipient must reject the URI as invalid, which matches the reference answer and evidence.)
+**Our answer** — judge: **correct** (The system answer correctly identifies that the From header is visible to anyone and often recorded in logs without expectation of privacy, which aligns perfectly with the reference answer's key facts.)
 
-> The specification requires that a recipient **reject the URI as invalid** when it processes an “http” URI whose host identifier is empty[1].
+> A server must not rely on the **From** header for access control or authentication because the address it carries is not private—it can be seen by anyone who receives or monitors the request and is commonly logged in server logs and error reports without any expectation of confidentiality [1]. ⚠ partly supported
 
 **Plain-RAG answer** — judge: **correct**
 
-> A recipient that receives an “http” URI whose host identifier is empty must reject the URI as invalid[1].
+> A server should not rely on the **From** header for access‑control or authentication because its contents are not private: the address is visible to anyone who sees the request and is commonly logged in files and error reports without any expectation of confidentiality[1].
 
 Your verdict on the judge: ☐ agree ☐ disagree
 

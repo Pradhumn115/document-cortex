@@ -1,32 +1,32 @@
 {
  "overall": {
-  "questions": 272,
+  "questions": 271,
   "documents": 15,
   "ours": {
-   "n": 272,
-   "correct": 235,
-   "partial": 14,
-   "incorrect": 23,
-   "errors": 0,
-   "accuracy": 0.864,
-   "score": 0.89
+   "n": 271,
+   "correct": 237,
+   "partial": 12,
+   "incorrect": 20,
+   "errors": 2,
+   "accuracy": 0.875,
+   "score": 0.897
   },
   "base": {
-   "n": 272,
-   "correct": 221,
-   "partial": 17,
-   "incorrect": 34,
-   "errors": 0,
-   "accuracy": 0.812,
-   "score": 0.844
+   "n": 271,
+   "correct": 218,
+   "partial": 22,
+   "incorrect": 29,
+   "errors": 2,
+   "accuracy": 0.804,
+   "score": 0.845
   },
   "ret_ours": {
    "n": 231,
    "evidence_all": 0.883,
    "evidence_any": 0.9,
-   "right_doc": 0.944,
+   "right_doc": 0.948,
    "hit@1": 0.649,
-   "mrr": 0.743
+   "mrr": 0.745
   },
   "ret_base": {
    "n": 231,
@@ -37,38 +37,38 @@
    "mrr": 0.595
   },
   "citations": {
-   "claims": 593,
-   "uncited": 115,
-   "supported": 410,
-   "partial": 47,
+   "claims": 573,
+   "uncited": 86,
+   "supported": 411,
+   "partial": 42,
    "recited": 0,
-   "unsupported": 18
+   "unsupported": 21
   },
   "latency": {
-   "answer_median": 1.17,
-   "answer_p90": 4.2,
-   "with_check_median": 2.51
+   "answer_median": 1.36,
+   "answer_p90": 4.27,
+   "with_check_median": 2.81
   }
  },
  "by_type": {
   "cross_lang": {
    "ours": {
     "n": 57,
-    "correct": 43,
-    "partial": 2,
-    "incorrect": 12,
+    "correct": 42,
+    "partial": 5,
+    "incorrect": 10,
     "errors": 0,
-    "accuracy": 0.754,
-    "score": 0.772
+    "accuracy": 0.737,
+    "score": 0.781
    },
    "base": {
     "n": 57,
     "correct": 35,
-    "partial": 3,
-    "incorrect": 19,
+    "partial": 4,
+    "incorrect": 18,
     "errors": 0,
     "accuracy": 0.614,
-    "score": 0.64
+    "score": 0.649
    },
    "ret_ours": {
     "n": 57,
@@ -91,26 +91,26 @@
    "ours": {
     "n": 105,
     "correct": 100,
-    "partial": 1,
+    "partial": 0,
     "incorrect": 4,
-    "errors": 0,
+    "errors": 1,
     "accuracy": 0.952,
-    "score": 0.957
+    "score": 0.952
    },
    "base": {
     "n": 105,
     "correct": 96,
-    "partial": 1,
-    "incorrect": 8,
+    "partial": 3,
+    "incorrect": 6,
     "errors": 0,
     "accuracy": 0.914,
-    "score": 0.919
+    "score": 0.929
    },
    "ret_ours": {
     "n": 105,
     "evidence_all": 0.971,
     "evidence_any": 0.971,
-    "right_doc": 0.99,
+    "right_doc": 1.0,
     "hit@1": 0.781,
     "mrr": 0.857
    },
@@ -126,20 +126,20 @@
   "multi": {
    "ours": {
     "n": 22,
-    "correct": 16,
-    "partial": 4,
-    "incorrect": 2,
+    "correct": 19,
+    "partial": 3,
+    "incorrect": 0,
     "errors": 0,
-    "accuracy": 0.727,
-    "score": 0.818
+    "accuracy": 0.864,
+    "score": 0.932
    },
    "base": {
     "n": 22,
-    "correct": 19,
-    "partial": 2,
-    "incorrect": 1,
+    "correct": 18,
+    "partial": 4,
+    "incorrect": 0,
     "errors": 0,
-    "accuracy": 0.864,
+    "accuracy": 0.818,
     "score": 0.909
    },
    "ret_ours": {
@@ -148,7 +148,7 @@
     "evidence_any": 1.0,
     "right_doc": 1.0,
     "hit@1": 0.5,
-    "mrr": 0.678
+    "mrr": 0.697
    },
    "ret_base": {
     "n": 22,
@@ -162,21 +162,21 @@
   "number": {
    "ours": {
     "n": 47,
-    "correct": 46,
-    "partial": 1,
+    "correct": 44,
+    "partial": 2,
     "incorrect": 0,
-    "errors": 0,
-    "accuracy": 0.979,
-    "score": 0.989
+    "errors": 1,
+    "accuracy": 0.936,
+    "score": 0.957
    },
    "base": {
     "n": 47,
-    "correct": 46,
+    "correct": 44,
     "partial": 0,
     "incorrect": 1,
-    "errors": 0,
-    "accuracy": 0.979,
-    "score": 0.979
+    "errors": 2,
+    "accuracy": 0.936,
+    "score": 0.936
    },
    "ret_ours": {
     "n": 47,
@@ -198,12 +198,12 @@
   "overview": {
    "ours": {
     "n": 15,
-    "correct": 10,
-    "partial": 5,
-    "incorrect": 0,
+    "correct": 12,
+    "partial": 2,
+    "incorrect": 1,
     "errors": 0,
-    "accuracy": 0.667,
-    "score": 0.833
+    "accuracy": 0.8,
+    "score": 0.867
    },
    "base": {
     "n": 15,
@@ -233,22 +233,22 @@
   },
   "unanswerable": {
    "ours": {
-    "n": 26,
+    "n": 25,
     "correct": 20,
-    "partial": 1,
+    "partial": 0,
     "incorrect": 5,
     "errors": 0,
-    "accuracy": 0.769,
-    "score": 0.788
+    "accuracy": 0.8,
+    "score": 0.8
    },
    "base": {
-    "n": 26,
+    "n": 25,
     "correct": 22,
     "partial": 0,
-    "incorrect": 4,
+    "incorrect": 3,
     "errors": 0,
-    "accuracy": 0.846,
-    "score": 0.846
+    "accuracy": 0.88,
+    "score": 0.88
    },
    "ret_ours": {
     "n": 0,
@@ -308,12 +308,12 @@
   "alice-in-wonderland": {
    "ours": {
     "n": 17,
-    "correct": 15,
-    "partial": 1,
+    "correct": 14,
+    "partial": 2,
     "incorrect": 1,
     "errors": 0,
-    "accuracy": 0.882,
-    "score": 0.912
+    "accuracy": 0.824,
+    "score": 0.882
    },
    "base": {
     "n": 17,
@@ -326,11 +326,11 @@
    },
    "ret_ours": {
     "n": 14,
-    "evidence_all": 0.929,
+    "evidence_all": 0.857,
     "evidence_any": 0.929,
     "right_doc": 1.0,
     "hit@1": 0.786,
-    "mrr": 0.827
+    "mrr": 0.81
    },
    "ret_base": {
     "n": 14,
@@ -366,7 +366,7 @@
     "evidence_any": 1.0,
     "right_doc": 1.0,
     "hit@1": 0.643,
-    "mrr": 0.786
+    "mrr": 0.798
    },
    "ret_base": {
     "n": 14,
@@ -380,20 +380,20 @@
   "bhav-guduchi": {
    "ours": {
     "n": 26,
+    "correct": 19,
+    "partial": 2,
+    "incorrect": 4,
+    "errors": 1,
+    "accuracy": 0.731,
+    "score": 0.769
+   },
+   "base": {
+    "n": 26,
     "correct": 20,
     "partial": 2,
     "incorrect": 4,
     "errors": 0,
     "accuracy": 0.769,
-    "score": 0.808
-   },
-   "base": {
-    "n": 26,
-    "correct": 19,
-    "partial": 4,
-    "incorrect": 3,
-    "errors": 0,
-    "accuracy": 0.731,
     "score": 0.808
    },
    "ret_ours": {
@@ -416,12 +416,12 @@
   "gift-of-the-magi": {
    "ours": {
     "n": 8,
-    "correct": 6,
-    "partial": 1,
+    "correct": 7,
+    "partial": 0,
     "incorrect": 1,
     "errors": 0,
-    "accuracy": 0.75,
-    "score": 0.812
+    "accuracy": 0.875,
+    "score": 0.875
    },
    "base": {
     "n": 8,
@@ -451,22 +451,22 @@
   },
   "nadi-darshan-p40-47-scan": {
    "ours": {
-    "n": 11,
-    "correct": 9,
-    "partial": 2,
+    "n": 10,
+    "correct": 10,
+    "partial": 0,
     "incorrect": 0,
     "errors": 0,
-    "accuracy": 0.818,
-    "score": 0.909
+    "accuracy": 1.0,
+    "score": 1.0
    },
    "base": {
-    "n": 11,
-    "correct": 9,
+    "n": 10,
+    "correct": 8,
     "partial": 1,
     "incorrect": 1,
     "errors": 0,
-    "accuracy": 0.818,
-    "score": 0.864
+    "accuracy": 0.8,
+    "score": 0.85
    },
    "ret_ours": {
     "n": 8,
@@ -497,18 +497,18 @@
    },
    "base": {
     "n": 17,
-    "correct": 14,
-    "partial": 0,
-    "incorrect": 3,
+    "correct": 13,
+    "partial": 2,
+    "incorrect": 2,
     "errors": 0,
-    "accuracy": 0.824,
+    "accuracy": 0.765,
     "score": 0.824
    },
    "ret_ours": {
     "n": 14,
     "evidence_all": 0.929,
     "evidence_any": 0.929,
-    "right_doc": 0.929,
+    "right_doc": 1.0,
     "hit@1": 0.786,
     "mrr": 0.833
    },
@@ -533,12 +533,12 @@
    },
    "base": {
     "n": 17,
-    "correct": 14,
-    "partial": 2,
-    "incorrect": 1,
-    "errors": 0,
-    "accuracy": 0.824,
-    "score": 0.882
+    "correct": 13,
+    "partial": 3,
+    "incorrect": 0,
+    "errors": 1,
+    "accuracy": 0.765,
+    "score": 0.853
    },
    "ret_ours": {
     "n": 14,
@@ -560,20 +560,20 @@
   "rfc9110-http-semantics": {
    "ours": {
     "n": 17,
-    "correct": 13,
+    "correct": 14,
     "partial": 2,
-    "incorrect": 2,
+    "incorrect": 1,
     "errors": 0,
-    "accuracy": 0.765,
-    "score": 0.824
+    "accuracy": 0.824,
+    "score": 0.882
    },
    "base": {
     "n": 17,
-    "correct": 14,
-    "partial": 1,
-    "incorrect": 2,
+    "correct": 13,
+    "partial": 3,
+    "incorrect": 1,
     "errors": 0,
-    "accuracy": 0.824,
+    "accuracy": 0.765,
     "score": 0.853
    },
    "ret_ours": {
@@ -596,12 +596,12 @@
   "wiki-ar": {
    "ours": {
     "n": 15,
-    "correct": 14,
+    "correct": 13,
     "partial": 0,
-    "incorrect": 1,
+    "incorrect": 2,
     "errors": 0,
-    "accuracy": 0.933,
-    "score": 0.933
+    "accuracy": 0.867,
+    "score": 0.867
    },
    "base": {
     "n": 15,
@@ -633,28 +633,28 @@
    "ours": {
     "n": 17,
     "correct": 16,
-    "partial": 1,
+    "partial": 0,
     "incorrect": 0,
-    "errors": 0,
+    "errors": 1,
     "accuracy": 0.941,
-    "score": 0.971
+    "score": 0.941
    },
    "base": {
     "n": 17,
-    "correct": 16,
+    "correct": 15,
     "partial": 1,
     "incorrect": 0,
-    "errors": 0,
-    "accuracy": 0.941,
-    "score": 0.971
+    "errors": 1,
+    "accuracy": 0.882,
+    "score": 0.912
    },
    "ret_ours": {
     "n": 14,
-    "evidence_all": 0.929,
+    "evidence_all": 1.0,
     "evidence_any": 1.0,
     "right_doc": 1.0,
     "hit@1": 0.857,
-    "mrr": 0.881
+    "mrr": 0.917
    },
    "ret_base": {
     "n": 14,
@@ -741,11 +741,11 @@
    "ours": {
     "n": 29,
     "correct": 23,
-    "partial": 2,
-    "incorrect": 4,
+    "partial": 3,
+    "incorrect": 3,
     "errors": 0,
     "accuracy": 0.793,
-    "score": 0.828
+    "score": 0.845
    },
    "base": {
     "n": 29,
@@ -776,21 +776,21 @@
   "wiki-ja": {
    "ours": {
     "n": 29,
-    "correct": 22,
+    "correct": 24,
     "partial": 1,
-    "incorrect": 6,
+    "incorrect": 4,
     "errors": 0,
-    "accuracy": 0.759,
-    "score": 0.776
+    "accuracy": 0.828,
+    "score": 0.845
    },
    "base": {
     "n": 29,
-    "correct": 22,
-    "partial": 1,
-    "incorrect": 6,
+    "correct": 23,
+    "partial": 3,
+    "incorrect": 3,
     "errors": 0,
-    "accuracy": 0.759,
-    "score": 0.776
+    "accuracy": 0.793,
+    "score": 0.845
    },
    "ret_ours": {
     "n": 26,
@@ -814,12 +814,12 @@
   "Arabic": {
    "ours": {
     "n": 12,
-    "correct": 11,
+    "correct": 10,
     "partial": 0,
-    "incorrect": 1,
+    "incorrect": 2,
     "errors": 0,
-    "accuracy": 0.917,
-    "score": 0.917
+    "accuracy": 0.833,
+    "score": 0.833
    },
    "base": {
     "n": 12,
@@ -849,30 +849,30 @@
   },
   "English": {
    "ours": {
-    "n": 150,
-    "correct": 132,
-    "partial": 8,
+    "n": 149,
+    "correct": 133,
+    "partial": 5,
     "incorrect": 10,
-    "errors": 0,
-    "accuracy": 0.88,
-    "score": 0.907
+    "errors": 1,
+    "accuracy": 0.893,
+    "score": 0.909
    },
    "base": {
-    "n": 150,
-    "correct": 122,
-    "partial": 13,
-    "incorrect": 15,
-    "errors": 0,
-    "accuracy": 0.813,
-    "score": 0.857
+    "n": 149,
+    "correct": 119,
+    "partial": 17,
+    "incorrect": 11,
+    "errors": 2,
+    "accuracy": 0.799,
+    "score": 0.856
    },
    "ret_ours": {
     "n": 109,
     "evidence_all": 0.954,
     "evidence_any": 0.972,
-    "right_doc": 0.991,
+    "right_doc": 1.0,
     "hit@1": 0.807,
-    "mrr": 0.871
+    "mrr": 0.875
    },
    "ret_base": {
     "n": 109,
@@ -922,21 +922,21 @@
   "Hindi": {
    "ours": {
     "n": 54,
-    "correct": 45,
-    "partial": 1,
-    "incorrect": 8,
-    "errors": 0,
-    "accuracy": 0.833,
+    "correct": 44,
+    "partial": 3,
+    "incorrect": 6,
+    "errors": 1,
+    "accuracy": 0.815,
     "score": 0.843
    },
    "base": {
     "n": 54,
     "correct": 41,
-    "partial": 2,
-    "incorrect": 11,
+    "partial": 1,
+    "incorrect": 12,
     "errors": 0,
     "accuracy": 0.759,
-    "score": 0.778
+    "score": 0.769
    },
    "ret_ours": {
     "n": 54,
@@ -958,21 +958,21 @@
   "Japanese": {
    "ours": {
     "n": 26,
-    "correct": 21,
+    "correct": 23,
     "partial": 1,
-    "incorrect": 4,
+    "incorrect": 2,
     "errors": 0,
-    "accuracy": 0.808,
-    "score": 0.827
+    "accuracy": 0.885,
+    "score": 0.904
    },
    "base": {
     "n": 26,
     "correct": 22,
-    "partial": 0,
-    "incorrect": 4,
+    "partial": 2,
+    "incorrect": 2,
     "errors": 0,
     "accuracy": 0.846,
-    "score": 0.846
+    "score": 0.885
    },
    "ret_ours": {
     "n": 26,
@@ -994,12 +994,12 @@
   "Sanskrit": {
    "ours": {
     "n": 4,
-    "correct": 2,
-    "partial": 2,
+    "correct": 3,
+    "partial": 1,
     "incorrect": 0,
     "errors": 0,
-    "accuracy": 0.5,
-    "score": 0.75
+    "accuracy": 0.75,
+    "score": 0.875
    },
    "base": {
     "n": 4,
@@ -1030,12 +1030,17 @@
  },
  "label_audit": {
   "unanswerable_checked": 30,
-  "answered_by_document": 4,
+  "answered_by_document": 5,
   "excluded": [
    {
     "id": "q015",
     "question": "What specific hardware configuration is required to train the Transformer model on the WMT 2014 English-to-German dataset?",
     "quote": "We trained our models on one machine with 8 NVIDIA P100 GPUs."
+   },
+   {
+    "id": "q035",
+    "question": "How does the text describe the interaction between the five Panchamahabhutas and the modern concept of subatomic particles in the context of human physiology?",
+    "quote": "यद्यपि आज का विज्ञान इन पाँचों में अगणित भेद कर चुका है । इन नामों से विभिन्न नाम उनके रख चुका है । यहाँ तक कि वह अपने सिद्धान्त से भारत के इस सिद्धान्त को गलत बताता है । [...] लेकिन यह सभी जानते हैं कि प्राणी के जीवन मरण में चाहे कोई भी तत्त्व या जीवारु कारण हों सब इन्हीं ५ के भीतर हैं--इन्हीं के भेद हैं ।"
    },
    {
     "id": "q061",

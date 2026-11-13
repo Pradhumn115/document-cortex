@@ -1,57 +1,355 @@
 {
- "English": {
-  "clean": {
-   "cer": 0.0,
-   "conf": 95.9,
-   "sec": 0.46,
-   "cer_auto": 0.0
+ "summary": {
+  "English": {
+   "clean": {
+    "tesseract": 0.002,
+    "vision": 0.0006,
+    "pipeline": 0.002,
+    "pages": 3,
+    "conf": 94.9,
+    "routes": [
+     "tesseract"
+    ]
+   },
+   "light": {
+    "tesseract": 0.0013,
+    "vision": 0.0019,
+    "pipeline": 0.0013,
+    "pages": 3,
+    "conf": 94.5,
+    "routes": [
+     "tesseract"
+    ]
+   },
+   "medium": {
+    "tesseract": 0.2756,
+    "vision": 0.0084,
+    "pipeline": 0.0078,
+    "pages": 3,
+    "conf": 62.0,
+    "routes": [
+     "vision corrects draft"
+    ]
+   },
+   "heavy": {
+    "tesseract": 1.0,
+    "vision": 0.1436,
+    "pipeline": 0.1436,
+    "pages": 3,
+    "conf": 0.0,
+    "routes": [
+     "vision from scratch"
+    ]
+   }
   },
-  "light": {
-   "cer": 0.0,
-   "conf": 95.6,
-   "sec": 0.26,
-   "cer_auto": 0.0
-  },
-  "medium": {
-   "cer": 0.346,
-   "conf": 57.8,
-   "sec": 0.23,
-   "cer_auto": 0.0,
-   "sec_auto": 2.66
-  },
-  "heavy": {
-   "cer": 1.0,
-   "conf": 0.0,
-   "sec": 0.08,
-   "cer_auto": 0.0133,
-   "sec_auto": 1.64
+  "Hindi": {
+   "clean": {
+    "tesseract": 0.1417,
+    "vision": 0.0144,
+    "pipeline": 0.1417,
+    "pages": 3,
+    "conf": 94.1,
+    "routes": [
+     "tesseract"
+    ]
+   },
+   "light": {
+    "tesseract": 0.0105,
+    "vision": 0.0229,
+    "pipeline": 0.0105,
+    "pages": 3,
+    "conf": 93.8,
+    "routes": [
+     "tesseract"
+    ]
+   },
+   "medium": {
+    "tesseract": 0.2187,
+    "vision": 0.399,
+    "pipeline": 0.0646,
+    "pages": 3,
+    "conf": 69.7,
+    "routes": [
+     "vision corrects draft"
+    ]
+   },
+   "heavy": {
+    "tesseract": 1.0,
+    "vision": 1.0,
+    "pipeline": 1.0,
+    "pages": 3,
+    "conf": 0.0,
+    "routes": [
+     "marked unreadable",
+     "vision from scratch"
+    ]
+   }
   }
  },
- "Hindi": {
-  "clean": {
-   "cer": 0.0077,
-   "conf": 93.5,
-   "sec": 0.52,
-   "cer_auto": 0.0077
+ "pages": [
+  {
+   "lang": "English",
+   "page": 1,
+   "level": "clean",
+   "conf": 95.9,
+   "tesseract": 0.0,
+   "vision": 0.0,
+   "vision_runaway": false,
+   "pipeline": 0.0,
+   "route": "tesseract"
   },
-  "light": {
-   "cer": 0.0058,
-   "conf": 93.7,
-   "sec": 0.59,
-   "cer_auto": 0.0058
+  {
+   "lang": "English",
+   "page": 1,
+   "level": "light",
+   "conf": 95.4,
+   "tesseract": 0.0,
+   "vision": 0.0058,
+   "vision_runaway": false,
+   "pipeline": 0.0,
+   "route": "tesseract"
   },
-  "medium": {
-   "cer": 0.1349,
-   "conf": 79.1,
-   "sec": 0.65,
-   "cer_auto": 0.1349
+  {
+   "lang": "English",
+   "page": 1,
+   "level": "medium",
+   "conf": 63.4,
+   "tesseract": 0.5127,
+   "vision": 0.0078,
+   "vision_runaway": false,
+   "pipeline": 0.0058,
+   "route": "vision corrects draft"
   },
-  "heavy": {
-   "cer": 1.0,
+  {
+   "lang": "English",
+   "page": 1,
+   "level": "heavy",
    "conf": 0.0,
-   "sec": 0.1,
-   "cer_auto": 0.6956,
-   "sec_auto": 12.86
+   "tesseract": 1.0,
+   "vision": 0.1267,
+   "vision_runaway": false,
+   "pipeline": 0.1267,
+   "route": "vision from scratch"
+  },
+  {
+   "lang": "English",
+   "page": 2,
+   "level": "clean",
+   "conf": 93.2,
+   "tesseract": 0.0039,
+   "vision": 0.0019,
+   "vision_runaway": false,
+   "pipeline": 0.0039,
+   "route": "tesseract"
+  },
+  {
+   "lang": "English",
+   "page": 2,
+   "level": "light",
+   "conf": 93.2,
+   "tesseract": 0.0019,
+   "vision": 0.0,
+   "vision_runaway": false,
+   "pipeline": 0.0019,
+   "route": "tesseract"
+  },
+  {
+   "lang": "English",
+   "page": 2,
+   "level": "medium",
+   "conf": 61.7,
+   "tesseract": 0.195,
+   "vision": 0.0077,
+   "vision_runaway": false,
+   "pipeline": 0.0077,
+   "route": "vision corrects draft"
+  },
+  {
+   "lang": "English",
+   "page": 2,
+   "level": "heavy",
+   "conf": 0.0,
+   "tesseract": 1.0,
+   "vision": 0.2201,
+   "vision_runaway": false,
+   "pipeline": 0.2201,
+   "route": "vision from scratch"
+  },
+  {
+   "lang": "English",
+   "page": 3,
+   "level": "clean",
+   "conf": 95.6,
+   "tesseract": 0.002,
+   "vision": 0.0,
+   "vision_runaway": false,
+   "pipeline": 0.002,
+   "route": "tesseract"
+  },
+  {
+   "lang": "English",
+   "page": 3,
+   "level": "light",
+   "conf": 95.0,
+   "tesseract": 0.002,
+   "vision": 0.0,
+   "vision_runaway": false,
+   "pipeline": 0.002,
+   "route": "tesseract"
+  },
+  {
+   "lang": "English",
+   "page": 3,
+   "level": "medium",
+   "conf": 61.0,
+   "tesseract": 0.1191,
+   "vision": 0.0098,
+   "vision_runaway": false,
+   "pipeline": 0.0098,
+   "route": "vision corrects draft"
+  },
+  {
+   "lang": "English",
+   "page": 3,
+   "level": "heavy",
+   "conf": 0.0,
+   "tesseract": 1.0,
+   "vision": 0.084,
+   "vision_runaway": false,
+   "pipeline": 0.084,
+   "route": "vision from scratch"
+  },
+  {
+   "lang": "Hindi",
+   "page": 1,
+   "level": "clean",
+   "conf": 94.4,
+   "tesseract": 0.0314,
+   "vision": 0.0039,
+   "vision_runaway": false,
+   "pipeline": 0.0314,
+   "route": "tesseract"
+  },
+  {
+   "lang": "Hindi",
+   "page": 1,
+   "level": "light",
+   "conf": 94.4,
+   "tesseract": 0.0078,
+   "vision": 0.0137,
+   "vision_runaway": false,
+   "pipeline": 0.0078,
+   "route": "tesseract"
+  },
+  {
+   "lang": "Hindi",
+   "page": 1,
+   "level": "medium",
+   "conf": 69.4,
+   "tesseract": 0.1863,
+   "vision": 0.0882,
+   "vision_runaway": false,
+   "pipeline": 0.051,
+   "route": "vision corrects draft"
+  },
+  {
+   "lang": "Hindi",
+   "page": 1,
+   "level": "heavy",
+   "conf": 0.0,
+   "tesseract": 1.0,
+   "vision": 18.8078,
+   "vision_runaway": true,
+   "pipeline": 1.0,
+   "route": "marked unreadable"
+  },
+  {
+   "lang": "Hindi",
+   "page": 2,
+   "level": "clean",
+   "conf": 94.1,
+   "tesseract": 0.0,
+   "vision": 0.0117,
+   "vision_runaway": false,
+   "pipeline": 0.0,
+   "route": "tesseract"
+  },
+  {
+   "lang": "Hindi",
+   "page": 2,
+   "level": "light",
+   "conf": 93.6,
+   "tesseract": 0.0039,
+   "vision": 0.0214,
+   "vision_runaway": false,
+   "pipeline": 0.0039,
+   "route": "tesseract"
+  },
+  {
+   "lang": "Hindi",
+   "page": 2,
+   "level": "medium",
+   "conf": 73.2,
+   "tesseract": 0.2,
+   "vision": 0.1087,
+   "vision_runaway": false,
+   "pipeline": 0.0641,
+   "route": "vision corrects draft"
+  },
+  {
+   "lang": "Hindi",
+   "page": 2,
+   "level": "heavy",
+   "conf": 0.0,
+   "tesseract": 1.0,
+   "vision": 17.4272,
+   "vision_runaway": true,
+   "pipeline": 1.0,
+   "route": "marked unreadable"
+  },
+  {
+   "lang": "Hindi",
+   "page": 3,
+   "level": "clean",
+   "conf": 93.9,
+   "tesseract": 0.3937,
+   "vision": 0.0276,
+   "vision_runaway": false,
+   "pipeline": 0.3937,
+   "route": "tesseract"
+  },
+  {
+   "lang": "Hindi",
+   "page": 3,
+   "level": "light",
+   "conf": 93.3,
+   "tesseract": 0.0197,
+   "vision": 0.0335,
+   "vision_runaway": false,
+   "pipeline": 0.0197,
+   "route": "tesseract"
+  },
+  {
+   "lang": "Hindi",
+   "page": 3,
+   "level": "medium",
+   "conf": 66.4,
+   "tesseract": 0.2697,
+   "vision": 1.1181,
+   "vision_runaway": false,
+   "pipeline": 0.0787,
+   "route": "vision corrects draft"
+  },
+  {
+   "lang": "Hindi",
+   "page": 3,
+   "level": "heavy",
+   "conf": 0.0,
+   "tesseract": 1.0,
+   "vision": 1.0,
+   "vision_runaway": false,
+   "pipeline": 1.0,
+   "route": "vision from scratch"
   }
- }
+ ]
 }

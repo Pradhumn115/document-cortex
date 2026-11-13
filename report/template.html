@@ -7,7 +7,7 @@
 :root {
   --bg: #f6f7f9; --paper: #ffffff; --ink: #14171c; --ink-2: #4a505b; --ink-3: #737a86;
   --rule: #dde1e7; --tint: #eef2f7; --accent: #1c5cab;
-  --ours: #2a78d6; --base: #eb6834;
+  --ours: #2a78d6; --base: #eb6834; --vis: #1baf7a; --prev: #9aa3b0;
   --good: #0ca30c; --warn: #c98500; --bad: #d03b3b;
   --grid: #e6e9ee;
   --f-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
@@ -17,12 +17,12 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #111317; --paper: #181b20; --ink: #eef0f3; --ink-2: #b9bfc9; --ink-3: #8b929e;
   --rule: #2b3038; --tint: #1f242b; --accent: #6da7ec;
-  --ours: #3987e5; --base: #d95926; --good: #2bbd2b; --warn: #e0a21a; --bad: #e66767; --grid: #262a31;
+  --ours: #3987e5; --base: #d95926; --vis: #199e70; --prev: #5d6573; --good: #2bbd2b; --warn: #e0a21a; --bad: #e66767; --grid: #262a31;
   color-scheme: dark; } }
 :root[data-theme="dark"] {
   --bg: #111317; --paper: #181b20; --ink: #eef0f3; --ink-2: #b9bfc9; --ink-3: #8b929e;
   --rule: #2b3038; --tint: #1f242b; --accent: #6da7ec;
-  --ours: #3987e5; --base: #d95926; --good: #2bbd2b; --warn: #e0a21a; --bad: #e66767; --grid: #262a31;
+  --ours: #3987e5; --base: #d95926; --vis: #199e70; --prev: #5d6573; --good: #2bbd2b; --warn: #e0a21a; --bad: #e66767; --grid: #262a31;
   color-scheme: dark; }
 
 * { box-sizing: border-box; }
@@ -182,16 +182,16 @@ footer { color: var(--ink-3); font-size: 0.82rem; border-top: 1px solid var(--ru
   <div class="flow">
     <div class="lane"><div class="lname">Add a file</div><div class="steps">
       <div class="step"><em>parse</em><b>Read the file</b><span>PDF, DOCX, Markdown, TXT, images. Pages with no text layer go to OCR.</span></div>
-      <div class="step"><em>ocr</em><b>OCR with escalation</b><span>Tesseract detects the script (160+ languages). Pages with confidence below 60 are re-read by a vision model.</span></div>
+      <div class="step"><em>ocr</em><b>OCR with escalation</b><span>Tesseract detects the script (160+ languages). Unsure pages (below 80; 85 for Indic scripts) go to a vision model, which corrects Tesseract's draft; runaway output is rejected.</span></div>
       <div class="step"><em>tree</em><b>Structure tree</b><span>Outline, headings, numbered sections or chapters become book › chapter › section, with page ranges.</span></div>
       <div class="step small-m"><em>cards · gpt-oss-120b</em><b>Index cards</b><span>Bottom-up, one per section: summary, key terms, entities, questions it answers. Cached.</span></div>
       <div class="step"><em>index · e5-small</em><b>Hybrid index</b><span>BM25 (with stems and CJK bigrams) + vectors over cards and 900-char passages; entity index.</span></div>
     </div></div>
     <div class="lane"><div class="lname">Ask</div><div class="steps">
       <div class="step"><em>route</em><b>Router</b><span>Overview questions read top-level cards; all others search.</span></div>
-      <div class="step"><em>search</em><b>Search every document</b><span>Hybrid search + entity hits, one hit per section, ranked across documents by absolute similarity.</span></div>
+      <div class="step"><em>search</em><b>Search every document</b><span>Compound questions are split into parts. Hybrid search + entity hits for each, one hit per section, ranked across documents by absolute similarity.</span></div>
       <div class="step"><em>expand</em><b>Drill-down</b><span>A long or parent section is replaced by its best passages; a bare heading reads on into what follows.</span></div>
-      <div class="step big-m"><em>answer · gpt-oss-120b</em><b>Cited answer</b><span>Answers only from the numbered sources, citing [n], in the question's language.</span></div>
+      <div class="step big-m"><em>answer · gpt-oss-120b</em><b>Cited answer</b><span>Answers only from the numbered sources, citing [n], in the question's language; says which part the sources do not cover.</span></div>
       <div class="step small-m"><em>check · gpt-oss-20b</em><b>Citation check</b><span>Each cited sentence: supported, partly supported, re-cited to the right source, or not found.</span></div>
     </div></div>
     <div class="lane"><div class="lname">Remember</div><div class="steps">
@@ -219,7 +219,7 @@ footer { color: var(--ink-3); font-size: 0.82rem; border-top: 1px solid var(--ru
     <div class="card"><h3>Index cards from a small model</h3><p>Each section gets a card, written bottom-up so a chapter's card summarises its sections' cards. Cards add the words a reader would use ("dose", "side effects") that the original text may not contain.</p><div class="vs">Like Contextual Retrieval, but one card per section instead of per chunk, and cached by content hash.</div></div>
     <div class="card"><h3>Sentence-level citation check</h3><p>A second, smaller model checks each cited sentence against the source it cites. If another source supports it, the citation is corrected; if none does, the sentence is flagged in the answer.</p><div class="vs">None of the systems in section 2 verify each claim after writing it.</div></div>
     <div class="card"><h3>Cross-document ranking that works</h3><p>Fused search scores cannot be compared between documents, so the library ranks by absolute vector similarity and keeps a document only within a margin of the best one.</p><div class="vs">Found by testing: relevant documents score 0.85–0.88, unrelated ones 0.78–0.82.</div></div>
-    <div class="card"><h3>OCR that knows when it is unsure</h3><p>Tesseract runs first with automatic script detection. Its confidence decides whether a page goes to a vision model, so printed pages stay free and only hard pages cost an API call.</p><div class="vs">Measured in section 5: heavy English blur goes from 100% to 1.3% character error.</div></div>
+    <div class="card"><h3>OCR that knows when it is unsure</h3><p>Tesseract runs first with automatic script detection. Unsure pages go to a vision model, which corrects Tesseract's draft instead of reading from scratch. Text that repeats itself is rejected, and the page is marked unreadable.</p><div class="vs">Measured in section 5: on blurred Hindi this beats both Tesseract and the vision model alone.</div></div>
     <div class="card"><h3>Multilingual by design</h3><p>Sentence splitting understands the Devanagari danda (।) and Japanese 。; keyword search uses CJK bigrams; answers come back in the question's script. Tested on English, Hindi, Sanskrit, French, Japanese and Arabic.</p><div class="vs">Cross-language questions (English question, Hindi or Arabic text) are part of the benchmark.</div></div>
     <div class="card"><h3>A visible reasoning trace</h3><p>Every step of reading and answering is shown in the UI as it happens: the outline found, cards written, what search returned and why, which key was used, and each claim's verdict.</p><div class="vs">Commercial tools show the answer and citations, not the process.</div></div>
     <div class="card"><h3>Runs free, fails over cleanly</h3><p>Built for Groq's free tier: rate-limit retries, daily-quota detection, then a paid key on the same model so quality stays the same. Any OpenAI-compatible local server (LM Studio, MLX) also works.</p><div class="vs">The whole 15-document library in this report was indexed for well under a dollar.</div></div>
@@ -277,8 +277,8 @@ footer { color: var(--ink-3); font-size: 0.82rem; border-top: 1px solid var(--ru
       <div class="legend" id="ckLegend"></div>
     </figure>
     <figure>
-      <figcaption><b>OCR character error rate</b><span>Synthetic scans of known text at four damage levels. Lower is better.</span></figcaption>
-      <div class="legend"><span><i style="background:var(--base)"></i>Tesseract alone</span><span><i style="background:var(--ours)"></i>Our pipeline (Tesseract → vision model when unsure)</span></div>
+      <figcaption><b>OCR character error rate</b><span>3 synthetic scans of known text per language, at four damage levels; mean, capped at 100%. Lower is better.</span></figcaption>
+      <div class="legend"><span><i style="background:var(--base)"></i>Tesseract alone</span><span><i style="background:var(--vis)"></i>Vision model alone</span><span><i style="background:var(--ours)"></i>Our pipeline</span></div>
       <div class="chart" id="chOcr"></div>
     </figure>
   </div>
@@ -302,6 +302,31 @@ footer { color: var(--ink-3); font-size: 0.82rem; border-top: 1px solid var(--ru
   </div>
 </section>
 
+<section id="fixes" hidden>
+  <div class="sec-head"><div class="eyebrow">5b · What the benchmark changed</div><h2>Fixing the weak spots, then checking on new questions</h2></div>
+  <div class="prose">
+    <p>The first run showed four weak spots. Each one was traced to a cause and fixed:</p>
+    <ul class="clean">
+      <li><strong>Overviews</strong> used the first six documents in the library instead of the one the question named. Now the named document is used, or the documents whose summary card is closest to the question.</li>
+      <li><strong>Two-part questions</strong> were searched as one query, so one half won and the other half found no sources. Now a compound question is split into its parts (by simple patterns, or by the model for long "how does X relate to Y" questions), and each part gets its own sources.</li>
+      <li><strong>Unanswerable questions</strong>: the answer model filled gaps from its own knowledge. The answer prompt now forbids facts that are not in the sources and asks it to say which part is not covered. The baseline uses the same prompt, so the comparison stays fair.</li>
+      <li><strong>OCR on blurred scans</strong>: Tesseract was over-confident, and the vision model read Hindi worse than Tesseract. Now unsure pages are escalated at a higher bar, and the vision model corrects Tesseract's draft. We also tried image clean-up (upscale, denoise, binarise) and a script hint; both made results worse and were dropped.</li>
+      <li><strong>The grader</strong> sometimes wrote its grade before its reasoning and contradicted itself. It now reasons first. Every answer, ours and the baseline's, was re-graded.</li>
+    </ul>
+    <p>Because these fixes were made while looking at the first test set, we also wrote a <strong>held-out set</strong> of <span id="hoN"></span> new questions on sections the first set never used, after the fixes were done.</p>
+  </div>
+  <figure>
+    <figcaption><b>Before and after the fixes (first test set)</b><span>Share of answers graded correct. The "before" bars use the old grader; "after" bars use the fixed one.</span></figcaption>
+    <div class="legend"><span><i style="background:var(--prev)"></i>Document Cortex before fixes</span><span><i style="background:var(--ours)"></i>Document Cortex after fixes</span><span><i style="background:var(--base)"></i>Plain RAG (same prompt)</span></div>
+    <div class="chart" id="chFix"></div>
+  </figure>
+  <figure>
+    <figcaption><b>Held-out questions, written after the fixes</b><span id="hoCap"></span></figcaption>
+    <div class="legend"><span><i style="background:var(--ours)"></i>Document Cortex</span><span><i style="background:var(--base)"></i>Plain RAG</span></div>
+    <div class="chart" id="chHeld"></div>
+  </figure>
+</section>
+
 <section>
   <div class="sec-head"><div class="eyebrow">6 · Limitations</div><h2>What the numbers do not show</h2></div>
   <div class="note" id="limits"></div>
@@ -311,7 +336,7 @@ footer { color: var(--ink-3); font-size: 0.82rem; border-top: 1px solid var(--ru
   <div class="sec-head"><div class="eyebrow">7 · Next steps</div><h2>Roadmap</h2></div>
   <ul class="clean">
     <li><strong>Knowledge graph (Neo4j)</strong> for the Ayurveda corpus: herbs, properties (rasa, guna, virya), diseases and formulations as typed relations, so questions like "which bitter herbs pacify pitta?" are answered by a graph query instead of search.</li>
-    <li><strong>Better OCR for damaged Indic scans</strong>: escalate on Hindi pages even when Tesseract is confident, and try a stronger vision model.</li>
+    <li><strong>Heavily damaged Indic scans</strong> are still unreadable by every engine we tried; try a stronger or Indic-trained OCR model (e.g. a local VLM) and real scanned pages with hand-typed ground truth.</li>
     <li><strong>Reranker</strong>: our Qwen3 reranker integration lowered accuracy (suspected prompt truncation); fix and re-test.</li>
     <li><strong>Tables and figures</strong> as first-class sections, and page-level citations inside long PDF sections.</li>
     <li><strong>Human-graded test set</strong> to calibrate the automatic grader, using the spot-check sheet.</li>
@@ -422,11 +447,13 @@ function render() {
   $("ckLegend").innerHTML = parts.map(p => `<span><i style="background:${p.color}"></i>${p.label}: ${p.n}</span>`).join("");
   $("ckCap").textContent = `${checked} cited sentences in ${ov.questions} answers; ${ck.uncited} sentences had no citation (mostly "the documents do not say" lines).`;
 
-  const lv = ["clean", "light", "medium", "heavy"], rowsO = [];
-  Object.entries(D.ocr).forEach(([lang, r]) => lv.forEach(l => r[l] && rowsO.push({label: `${lang} · ${l}`, vals: [
-    {v: r[l].cer, color: B, tip: `Tesseract: ${(r[l].cer * 100).toFixed(1)}% characters wrong (confidence ${r[l].conf})`},
-    {v: r[l].cer_auto ?? r[l].cer, color: O, tip: `Pipeline: ${((r[l].cer_auto ?? r[l].cer) * 100).toFixed(1)}%` + (r[l].sec_auto ? ` (vision model, ${r[l].sec_auto}s)` : " (Tesseract was confident, kept)")}]})));
-  hbars($("chOcr"), rowsO, {labelW: 130, fmt: v => (v * 100).toFixed(v < 0.1 && v > 0 ? 1 : 0) + "%"});
+  const lv = ["clean", "light", "medium", "heavy"], rowsO = [], OS = D.ocr.summary;
+  const f1 = v => v == null ? "–" : (v * 100).toFixed(1) + "%";
+  Object.entries(OS).forEach(([lang, r]) => lv.forEach(l => r[l] && rowsO.push({label: `${lang} · ${l}`, vals: [
+    {v: r[l].tesseract, color: B, tip: `Tesseract: ${f1(r[l].tesseract)} wrong (confidence ${r[l].conf})`},
+    {v: r[l].vision ?? 0, color: "var(--vis)", tip: `Vision model alone: ${f1(r[l].vision)} wrong`},
+    {v: r[l].pipeline ?? 0, color: O, tip: `Pipeline: ${f1(r[l].pipeline)} (${r[l].routes.join(", ")})`}]})));
+  hbars($("chOcr"), rowsO, {labelW: 130, barH: 9, gap: 2, rowGap: 10, fmt: v => (v * 100).toFixed(v < 0.1 && v > 0 ? 1 : 0) + "%"});
 
   hbars($("chCards"), [["gpt-oss-120b", .61], ["qwen3.8-27b", .58], ["gpt-oss-20b", .52], ["no cards", .39]].map(([l, v]) =>
     ({label: l, vals: [{v, color: l === "gpt-oss-120b" ? O : "var(--ink-3)", tip: `${l}: hit@1 ${v}`}]})), {labelW: 120, fmt: v => v.toFixed(2), barH: 16});
@@ -452,6 +479,31 @@ function render() {
     <div class="q">${esc(e.question)}</div><div class="meta-line">Gold: ${esc(e.gold)}</div>
     <div><span class="pill ${e.g_ours}">ours: ${e.g_ours}</span> <span class="pill ${e.g_base}">plain RAG: ${e.g_base}</span></div>
     <div class="a">${esc(e.ours)}</div></div>`).join("");
+  if (D.before) {
+    $("fixes").hidden = false;
+    const pb = D.before.by_type, pa = D.summary.by_type;
+    const ft = ["overall", "multi", "unanswerable", "overview", "cross_lang", "fact", "number"];
+    hbars($("chFix"), ft.filter(t => t === "overall" || (pb[t] && pa[t])).map(t => {
+      const b = t === "overall" ? D.before.overall : pb[t], a = t === "overall" ? D.summary.overall : pa[t];
+      return {label: (t === "overall" ? "All questions" : TYPE_NAMES[t]) + ` (${a.ours.n})`, vals: [
+        {v: b.ours.accuracy, color: "var(--prev)", tip: `Before fixes: ${b.ours.correct}/${b.ours.n} correct`},
+        {v: a.ours.accuracy, color: O, tip: `After fixes: ${a.ours.correct}/${a.ours.n} correct`},
+        {v: a.base.accuracy, color: B, tip: `Plain RAG: ${a.base.correct}/${a.base.n} correct`}]};
+    }), {labelW: 230, barH: 10, gap: 2});
+  }
+  if (D.heldout) {
+    const H = D.heldout.summary, ht = H.by_type, hs = D.heldout.sig;
+    $("hoN").textContent = H.overall.questions;
+    $("hoCap").textContent = `${H.overall.questions} questions. Overall ${pct(H.overall.ours.accuracy)} correct vs ${pct(H.overall.base.accuracy)}; ` +
+      `${hs.ours_only} questions only we got right, ${hs.base_only} only plain RAG (McNemar p = ${hs.mcnemar_p}).`;
+    const order2 = ["fact", "number", "multi", "cross_lang", "unanswerable"].filter(t => ht[t]);
+    hbars($("chHeld"), [{label: `All questions (${H.overall.ours.n})`, vals: [
+        {v: H.overall.ours.accuracy, color: O, tip: `Document Cortex: ${H.overall.ours.correct}/${H.overall.ours.n}`},
+        {v: H.overall.base.accuracy, color: B, tip: `Plain RAG: ${H.overall.base.correct}/${H.overall.base.n}`}]}]
+      .concat(order2.map(t => ({label: TYPE_NAMES[t] + ` (${ht[t].ours.n})`, vals: [
+        {v: ht[t].ours.accuracy, color: O, tip: `Document Cortex: ${ht[t].ours.correct} correct, ${ht[t].ours.partial} partial of ${ht[t].ours.n}`},
+        {v: ht[t].base.accuracy, color: B, tip: `Plain RAG: ${ht[t].base.correct} correct, ${ht[t].base.partial} partial of ${ht[t].base.n}`}]}))), {labelW: 230});
+  }
   $("limits").innerHTML = D.limits.map(l => `<p>${l}</p>`).join("");
   $("foot").innerHTML = `Document Cortex · <a href="https://github.com/Pradhumn115/document-cortex">github.com/Pradhumn115/document-cortex</a> · raw data in <code>bench/</code> (questions, answers, grades, spot-check sheet).`;
 }
