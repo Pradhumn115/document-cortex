@@ -710,6 +710,25 @@ def ocr_bench() -> None:
     print(json.dumps(summary, ensure_ascii=False, indent=1))
 
 
+def export_public() -> None:
+    """results_<tag>_public.jsonl: no source text, and any document outside the benchmark set
+    (e.g. the user's own files that were in the library) reduced to an anonymous marker."""
+    qs = [json.loads(l) for l in QFILE.read_text(encoding="utf-8").splitlines() if l.strip()]
+    known = {q["doc"] for q in qs}
+    out = BENCH / f"results_{TAG}_public.jsonl"
+    with out.open("w", encoding="utf-8") as f:
+        for l in RFILE.read_text(encoding="utf-8").splitlines():
+            if not l.strip():
+                continue
+            r = json.loads(l)
+            for src in r["sources"] + r["baseline"]["sources"]:
+                src.pop("text", None)
+                if src["doc"] not in known:
+                    src.update({"doc": "private-document", "node_id": "", "path": ""})
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    print(out)
+
+
 def main() -> None:
     config.load_keys()
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -723,6 +742,7 @@ def main() -> None:
     r.add_argument("--workers", type=int, default=3)
     sub.add_parser("score")
     sub.add_parser("ocr")
+    sub.add_parser("export", help="write a copy of the results that is safe to publish")
     a = ap.parse_args()
     set_tag(a.tag)
     if a.cmd == "generate":
@@ -731,6 +751,8 @@ def main() -> None:
         run(a.limit, a.workers)
     elif a.cmd == "score":
         score()
+    elif a.cmd == "export":
+        export_public()
     else:
         ocr_bench()
 
