@@ -24,3 +24,6 @@ venv/
 
 # os
 .DS_Store
+
+# full benchmark results include long excerpts of private documents
+bench/results_v1.jsonl

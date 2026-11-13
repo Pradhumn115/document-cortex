@@ -171,7 +171,7 @@ def vlm_page(image, model: str = VLM_DEFAULT, base_url: str | None = None) -> di
     url = "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
     last = None
     for key in keys:
-        client = openai.OpenAI(base_url=base_url, api_key=key)
+        client = openai.OpenAI(base_url=base_url, api_key=key, timeout=120, max_retries=0)
         for attempt in range(5):
             try:
                 r = client.chat.completions.create(model=model, max_tokens=4000, temperature=0.0, messages=[

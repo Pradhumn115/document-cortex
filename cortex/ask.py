@@ -180,11 +180,45 @@ def _source(doc: Doc, nid: str, text: str, multi: bool) -> dict:
 
 
 # ------------------------------------------------------------------- gather
-def gather_overview(docs: list[Doc], k: int = 6, trace=None) -> list[dict]:
+def _name_key(s: str) -> str:
+    s = re.sub(r"\.(pdf|docx?|md|txt|png|jpe?g)$", "", s.strip(), flags=re.I)
+    return re.sub(r"[\W_]+", " ", s.lower()).strip()
+
+
+def pick_overview_docs(docs: list[Doc], question: str, k: int = 6, trace=None) -> list[Doc]:
+    """Which documents an overview question is about: the ones it names; otherwise,
+    when there are more than k, the k whose whole-document card is closest to it."""
+    trace = trace or NullTrace()
+    if len(docs) == 1:
+        return docs
+    q = _name_key(question)
+    named = [d for d in docs if any(len(n) >= 4 and n in q for n in {_name_key(d.name), _name_key(d.slug),
+                                                                      _name_key(d.tree.root.title)})]
+    if named:
+        trace.step("select", f"The question names {len(named)} document{'s' if len(named) > 1 else ''}",
+                   ", ".join(d.name for d in named))
+        return named
+    if len(docs) <= k:
+        return docs
+    scored = []
+    for d in docs:
+        idx = [i for i in d.searcher.node_items("root") if d.searcher.items[i].kind == "card"]
+        if not idx:
+            continue
+        qv = d.searcher.embed([question], "query")[0]
+        scored.append((float(max(d.searcher.vecs[i] @ qv for i in idx)), d))
+    scored.sort(key=lambda x: -x[0])
+    keep = [d for _, d in scored[:k]]
+    trace.step("select", f"Picked the {len(keep)} documents closest to the question",
+               ", ".join(f"{d.name} ({s:.2f})" for s, d in scored[:k]))
+    return keep
+
+
+def gather_overview(docs: list[Doc], k: int = 6, trace=None, question: str = "") -> list[dict]:
     """One source per document: its root card plus its top-level section cards."""
     trace = trace or NullTrace()
     out = []
-    for d in docs:
+    for d in pick_overview_docs(docs, question, k, trace):
         root = d.cards.get("root", {})
         lines = [root.get("summary", "")] if root else []
         for cid in d.tree.root.children[:40]:
@@ -205,7 +239,7 @@ def gather(docs: list[Doc], question: str, k: int = 6, trace=None) -> tuple[list
         trace.step("route", "Route: overview of the whole document",
                    f"The question asks for an overview (“{m.group(0)}”), so the answer is built from each "
                    f"document's top-level index cards instead of searching for one passage.")
-        return gather_overview(docs, trace=trace), mode
+        return gather_overview(docs, k, trace=trace, question=question), mode
     trace.step("route", f"Route: search {'across ' + str(len(docs)) + ' documents' if len(docs) > 1 else 'the document'}",
                "Not an overview question, so look for the specific sections that answer it.")
     multi = len(docs) > 1

@@ -387,3 +387,30 @@ def test_ocr_over_marked_headings_are_demoted():
     assert "treated as ordinary lines" in t.root.meta["structure"]
     body = " ".join(n.text for n in t.nodes.values())
     assert "k fold gives k pairs" in body and "Imputation by mean" in body
+
+
+def test_roman_chapters_with_title_on_next_line_and_toc_removed(tmp_path):
+    from cortex.ingest import build_tree
+    f = tmp_path / "novel.txt"
+    f.write_text("Contents\n\nCHAPTER I.\nDown the Rabbit-Hole\nCHAPTER II.\nThe Pool of Tears\n\n"
+                 "CHAPTER I.\nDown the Rabbit-Hole\n\nAlice was beginning to get very tired.\n\n"
+                 "CHAPTER II.\nThe Pool of Tears\n\nCuriouser and curiouser!\n")
+    t = build_tree(f)
+    tops = [t.nodes[c].title for c in t.root.children]
+    assert tops == ["CHAPTER I. Down the Rabbit-Hole", "CHAPTER II. The Pool of Tears"]
+    assert "very tired" in t.nodes[t.root.children[0]].text
+
+
+def test_evalset_quote_check_and_cer():
+    from cortex.evalset import cer, norm, quote_in
+    doc = norm("The Transformer uses multi-\nhead attention to “jointly attend” to information.")
+    assert quote_in('uses multi-head attention to "jointly attend"', doc)
+    assert not quote_in("uses recurrent layers to attend to information", doc)
+    assert quote_in("光合成は光エネルギーを化学エネルギーに変換する", norm("植物の光合成は光エネルギーを化学エネルギーに変換する生化学反応"))
+    assert cer("abcd", "abcd") == 0 and cer("abcd", "abxd") == 0.25
+
+
+def test_overview_picks_named_document():
+    from cortex.ask import _name_key
+    assert _name_key("The Gift of the Magi — O. Henry.txt") in _name_key(
+        "Give me an overview of “The Gift of the Magi — O. Henry.txt”: what is it about?")

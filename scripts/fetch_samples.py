@@ -17,10 +17,15 @@ from pathlib import Path
 UA = {"User-Agent": "document-cortex-samples/0.1"}
 OUT = Path(__file__).resolve().parent.parent / "samples"
 WIKI = {"hi": "आयुर्वेद", "fr": "Photosynthèse", "ja": "光合成", "ar": "تمثيل ضوئي"}
+WIKI_EN = {"wiki-en-photosynthesis.txt": "Photosynthesis", "wiki-en-ayurveda.txt": "Ayurveda"}
 FILES = {
     "rfc2324-htcpcp.txt": "https://www.rfc-editor.org/rfc/rfc2324.txt",
     "gift-of-the-magi.txt": "https://www.gutenberg.org/cache/epub/7256/pg7256.txt",
     "raptor-2401.18059.pdf": "https://arxiv.org/pdf/2401.18059",
+    # long / differently structured documents for the benchmark (bench/eval_v1.jsonl)
+    "rfc9110-http-semantics.txt": "https://www.rfc-editor.org/rfc/rfc9110.txt",
+    "attention-is-all-you-need-1706.03762.pdf": "https://arxiv.org/pdf/1706.03762",
+    "alice-in-wonderland.txt": "https://www.gutenberg.org/cache/epub/11/pg11.txt",
 }
 
 
@@ -36,6 +41,12 @@ def main() -> None:
         page = next(iter(json.loads(get(f"https://{lang}.wikipedia.org/w/api.php?{q}"))["query"]["pages"].values()))
         (OUT / f"wiki-{lang}.txt").write_text(page.get("extract", ""), encoding="utf-8")
         print(f"wiki-{lang}.txt")
+    for name, title in WIKI_EN.items():
+        q = urllib.parse.urlencode({"action": "query", "prop": "extracts", "explaintext": 1,
+                                    "titles": title, "format": "json", "redirects": 1})
+        page = next(iter(json.loads(get(f"https://en.wikipedia.org/w/api.php?{q}"))["query"]["pages"].values()))
+        (OUT / name).write_text(page.get("extract", ""), encoding="utf-8")
+        print(name)
     for name, url in FILES.items():
         (OUT / name).write_bytes(get(url))
         print(name)

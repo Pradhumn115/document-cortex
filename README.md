@@ -91,6 +91,33 @@ Any OpenAI-compatible server works too (`--provider openai`, e.g. LM Studio), as
 `python3 scripts/fetch_samples.py` downloads the public test documents;
 `bench/multidoc_questions.tsv` has the questions and expected answers.
 
+### Independent benchmark (272 questions, 15 documents, 6 languages)
+
+Questions written by a different model family (Qwen) from the raw text; every gold answer
+carries a quote that code checks is in the document; answers graded by Qwen; every question
+asked against the whole library. Baseline = plain RAG (same chunks, vectors only, top 6,
+same answer model). Full write-up: `report/report.html` (`python3 scripts/build_report.py`).
+
+| | Document Cortex | plain RAG |
+|---|---|---|
+| answers fully correct | **86.4%** | 81.2% |
+| evidence found by search | **90.0%** | 79.2% |
+| evidence ranked first | **64.9%** | 48.5% |
+| cross-language questions correct | **75%** | 61% |
+| document overviews correct | **67%** | 20% |
+| two-section questions correct | 73% | **86%** |
+| unanswerable questions refused | 77% | **85%** |
+
+Paired: 26 questions only we answered correctly, 12 only the baseline (McNemar p = 0.034).
+Citation check: 410 of 475 cited sentences supported, 47 flagged partly supported, 18 not found.
+OCR character error (synthetic scans): English 0% / 0% / 0% / 1.3% from clean to heavy damage
+with vision-model escalation; Hindi 0.8% / 0.6% / 13% / 70%.
+
+```bash
+python3 -m cortex.evalset generate && python3 -m cortex.evalset run && python3 -m cortex.evalset score
+python3 -m cortex.evalset ocr
+```
+
 Benchmarks (33 gold questions over 4 Bhavaprakasha herbs):
 
 | card writer | hit@1 | MRR | | search | MRR |
@@ -116,7 +143,9 @@ cortex/
   web.py        FastAPI app + static/index.html (the UI)
   llm.py        Groq / OpenAI-compatible / Anthropic, key and model fallback
   bench.py      benchmarks; profiles/ has the Bhavaprakasha corpus loader
-tests/          33 tests, no network needed
+  evalset.py    independent benchmark: generate, run, score, OCR error rate
+report/         project report (template + build script output)
+tests/          36 tests, no network needed
 ```
 
 See [ROADMAP.md](ROADMAP.md) for what is built and what is next.

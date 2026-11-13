@@ -94,7 +94,7 @@ def make_llm(provider: str, model: str | None = None, base_url: str | None = Non
         else:
             base_url = base_url or os.environ.get("OPENAI_BASE_URL", "http://127.0.0.1:1234/v1")
             key = os.environ.get("OPENAI_API_KEY", "lm-studio")
-        client = openai.OpenAI(base_url=base_url, api_key=key)
+        client = openai.OpenAI(base_url=base_url, api_key=key, timeout=90, max_retries=0)
 
         def call(system: str, user: str) -> str:
             r = client.chat.completions.create(

@@ -1,0 +1,459 @@
+<title>Document Cortex Report</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (≈70ch) with wide figure bands; sections are numbered like a thesis because they are read in order. */
+:root {
+  --bg: #f6f7f9; --paper: #ffffff; --ink: #14171c; --ink-2: #4a505b; --ink-3: #737a86;
+  --rule: #dde1e7; --tint: #eef2f7; --accent: #1c5cab;
+  --ours: #2a78d6; --base: #eb6834;
+  --good: #0ca30c; --warn: #c98500; --bad: #d03b3b;
+  --grid: #e6e9ee;
+  --f-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --f-body: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111317; --paper: #181b20; --ink: #eef0f3; --ink-2: #b9bfc9; --ink-3: #8b929e;
+  --rule: #2b3038; --tint: #1f242b; --accent: #6da7ec;
+  --ours: #3987e5; --base: #d95926; --good: #2bbd2b; --warn: #e0a21a; --bad: #e66767; --grid: #262a31;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111317; --paper: #181b20; --ink: #eef0f3; --ink-2: #b9bfc9; --ink-3: #8b929e;
+  --rule: #2b3038; --tint: #1f242b; --accent: #6da7ec;
+  --ours: #3987e5; --base: #d95926; --good: #2bbd2b; --warn: #e0a21a; --bad: #e66767; --grid: #262a31;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.6 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 48px 80px; display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; line-height: 1.15; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.1rem, 5vw, 3.3rem); font-weight: 700; }
+h2 { font-size: 1.75rem; font-weight: 600; }
+h3 { font-size: 1.12rem; font-weight: 600; }
+p { margin: 0; }
+.prose { max-width: 70ch; display: grid; gap: 14px; color: var(--ink-2); }
+.prose strong { color: var(--ink); font-weight: 600; }
+.eyebrow { font: 500 0.76rem/1 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+section { display: grid; gap: 22px; }
+.sec-head { display: grid; gap: 8px; border-top: 1px solid var(--rule); padding-top: 22px; }
+.num { font-variant-numeric: tabular-nums; }
+code, .mono { font-family: var(--f-mono); font-size: 0.86em; }
+code { background: var(--tint); padding: 1px 5px; border-radius: 4px; }
+a { color: var(--accent); }
+
+/* hero */
+.hero { display: grid; gap: 18px; }
+.hero .lede { font-size: 1.15rem; color: var(--ink-2); max-width: 62ch; }
+.meta-line { font: 400 0.85rem var(--f-mono); color: var(--ink-3); }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--rule);
+  border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.kpi { background: var(--paper); padding: 18px 18px 16px; display: grid; gap: 4px; align-content: start; }
+.kpi b { font: 600 2rem/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.kpi span { color: var(--ink-2); font-size: 0.88rem; }
+.kpi small { color: var(--ink-3); font-size: 0.78rem; }
+@media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* tables */
+.tbl { overflow-x: auto; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 0.74rem var(--f-mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); background: var(--tint); }
+tr:last-child td { border-bottom: 0; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.us td { background: color-mix(in srgb, var(--ours) 9%, var(--paper)); }
+.yes { color: var(--good); font-weight: 600; } .no { color: var(--ink-3); } .part { color: var(--warn); font-weight: 600; }
+
+/* figure */
+figure { margin: 0; background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
+figcaption { display: grid; gap: 4px; }
+figcaption b { font: 600 1rem var(--f-display); }
+figcaption span { color: var(--ink-3); font-size: 0.85rem; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.84rem; color: var(--ink-2); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 820px) { .grid2 { grid-template-columns: 1fr; } }
+svg text { fill: var(--ink-2); font-family: var(--f-body); }
+svg .lab { font-size: 12.5px; fill: var(--ink); }
+svg .val { font-size: 11.5px; fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+svg .ax { font-size: 11px; fill: var(--ink-3); }
+svg .gl { stroke: var(--grid); stroke-width: 1; }
+.chart { width: 100%; overflow-x: auto; }
+.chart svg { display: block; min-width: 520px; width: 100%; height: auto; }
+.tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--paper); font-size: 0.8rem; padding: 6px 9px;
+  border-radius: 6px; max-width: 260px; z-index: 20; line-height: 1.4; }
+.mark { cursor: default; }
+.mark:hover { opacity: 0.82; }
+
+/* pipeline diagram */
+.flow { display: grid; gap: 10px; }
+.lane { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 14px; align-items: stretch; }
+.lane > .lname { font: 600 0.78rem var(--f-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); padding-top: 12px; }
+.steps { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.step { flex: 1 1 150px; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; display: grid; gap: 3px; position: relative; min-width: 0; }
+.step b { font: 600 0.92rem var(--f-display); }
+.step span { font-size: 0.8rem; color: var(--ink-2); line-height: 1.4; }
+.step em { font: normal 0.72rem var(--f-mono); color: var(--accent); }
+.step.small-m { border-left: 3px solid var(--ours); }
+.step.big-m { border-left: 3px solid var(--accent); }
+@media (max-width: 640px) { .lane { grid-template-columns: 1fr; } .lane > .lname { padding-top: 0; } }
+
+/* innovations */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.card { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; display: grid; gap: 8px; align-content: start; }
+.card p { color: var(--ink-2); font-size: 0.9rem; }
+.card .vs { font-size: 0.8rem; color: var(--ink-3); border-top: 1px dashed var(--rule); padding-top: 8px; }
+
+.note { background: var(--tint); border-radius: 10px; padding: 16px 18px; color: var(--ink-2); font-size: 0.92rem; display: grid; gap: 8px; }
+.note b { color: var(--ink); }
+ul.clean { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; color: var(--ink-2); }
+pre { margin: 0; background: var(--tint); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font: 0.82rem/1.55 var(--f-mono); color: var(--ink); }
+.ex { display: grid; gap: 10px; }
+.qa { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px; font-size: 0.9rem; }
+.qa .q { font-weight: 600; }
+.qa .a { color: var(--ink-2); white-space: pre-wrap; }
+.pill { display: inline-block; font: 600 0.7rem var(--f-mono); padding: 2px 7px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.04em; }
+.pill.correct { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+.pill.partial { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+.pill.incorrect { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
+footer { color: var(--ink-3); font-size: 0.82rem; border-top: 1px solid var(--rule); padding-top: 18px; }
+@media (prefers-reduced-motion: no-preference) { .mark { transition: opacity .12s; } }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">Project report · Document Cortex v0.1</div>
+  <h1>Ask any document, get answers you can check</h1>
+  <p class="lede">Document Cortex reads PDFs, scans, handwriting, Word files and plain text in any language, builds a
+    book-like index of each one, and answers questions with citations to the exact section and page. A second model
+    then checks every cited sentence against its source.</p>
+  <p class="meta-line" id="metaLine"></p>
+  <div class="kpis" id="kpis"></div>
+</header>
+
+<section>
+  <div class="sec-head"><div class="eyebrow">1 · The problem</div><h2>Why "just ask the PDF" is hard</h2></div>
+  <div class="prose">
+    <p>A language model can only read a limited amount of text at once, and it answers fluently even when it has not
+      seen the right passage. For a long book, a scanned report or a set of handwritten notes, three things go wrong:</p>
+    <ul class="clean">
+      <li><strong>Finding</strong>: the passage that answers the question is one page out of hundreds, often worded
+        differently from the question, sometimes in another language.</li>
+      <li><strong>Reading</strong>: scans and handwriting must be turned into text first, and tables of contents,
+        page headers and boilerplate get in the way.</li>
+      <li><strong>Trusting</strong>: the reader cannot tell a correct answer from a plausible invented one unless each
+        claim points to evidence, and someone checks that the evidence really says it.</li>
+    </ul>
+    <p>This project started as an Ayurveda assistant over the <em>Bhavaprakasha Nighantu</em> (OCR, LLM extraction to
+      JSON, a vector store and a graph). Document Cortex generalises that pipeline to <strong>any document</strong>.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><div class="eyebrow">2 · What industry uses today</div><h2>Current approaches</h2></div>
+  <div class="prose"><p>Two families dominate. <strong>Retrieval (RAG)</strong> cuts the document into chunks, embeds them, and
+    shows the model the few most similar chunks. <strong>Long context</strong> puts the whole document into a very large
+    prompt. Research systems add structure on top of retrieval: summary trees, knowledge graphs, or a table of contents
+    the model reasons over. The table summarises what each one publicly documents.</p></div>
+  <div class="tbl"><table>
+    <thead><tr><th>System</th><th>How it finds the answer</th><th>Strong at</th><th>Weak at</th><th>Uses document structure</th><th>Checks its citations</th></tr></thead>
+    <tbody>
+      <tr><td><b>ChatGPT file search</b><br><small>OpenAI</small></td><td>~800-token chunks with overlap, embeddings + keyword search, reranked, top chunks to the model</td><td>Simple fact lookup at scale</td><td>Questions about the whole document; chunks lose their section context</td><td class="no">No</td><td class="no">No</td></tr>
+      <tr><td><b>Claude</b><br><small>Anthropic</small></td><td>Long context (200K tokens) for whole documents; retrieval in Projects when they grow; "Contextual Retrieval" adds an LLM-written context line to every chunk</td><td>Reading a full document closely; quoted citations</td><td>Cost grows with document length; very large libraries still need retrieval</td><td class="part">Partly</td><td class="part">Quotes spans, no separate check</td></tr>
+      <tr><td><b>Gemini</b><br><small>Google</small></td><td>Very long context (1M+ tokens): the document goes into the prompt, PDFs as text and page images</td><td>Whole-document reasoning in one go</td><td>Slow and costly per question; facts in the middle of long inputs get missed</td><td class="no">Implicit</td><td class="no">No</td></tr>
+      <tr><td><b>NotebookLM</b><br><small>Google</small></td><td>Source-grounded retrieval over a notebook of sources, on Gemini</td><td>Grounded answers with clickable passage citations</td><td>Closed system; no outline view or local use</td><td class="no">No</td><td class="part">Grounded, not verified per claim</td></tr>
+      <tr><td><b>RAPTOR</b><br><small>Stanford, ICLR 2024</small></td><td>Clusters chunks and summarises them recursively into a tree; searches all levels</td><td>Questions needing a summary of many parts</td><td>The tree comes from clustering, not the document's real chapters</td><td class="part">Builds its own</td><td class="no">No</td></tr>
+      <tr><td><b>GraphRAG</b><br><small>Microsoft Research, 2024</small></td><td>LLM extracts an entity–relation graph, groups it into communities with summaries</td><td>"What are the main themes?" across a corpus</td><td>Expensive indexing (many LLM calls per chunk)</td><td class="no">No</td><td class="no">No</td></tr>
+      <tr><td><b>HippoRAG</b><br><small>NeurIPS 2024</small></td><td>Knowledge graph + Personalized PageRank, modelled on the hippocampus</td><td>Multi-hop questions</td><td>Graph quality depends on extraction</td><td class="no">No</td><td class="no">No</td></tr>
+      <tr><td><b>PageIndex</b><br><small>Vectify AI, 2025</small></td><td>No vectors: builds a table-of-contents tree and lets the model reason down it</td><td>Long structured reports (finance, legal)</td><td>Needs good headings; many model calls per question</td><td class="yes">Yes</td><td class="no">No</td></tr>
+      <tr class="us"><td><b>Document Cortex</b><br><small>this project</small></td><td>The document's own outline as a tree; a small model writes an index card per section; hybrid keyword + vector search over cards and passages; drill-down into long sections</td><td>Any format and language, outline-level and fact questions, runs on a free API tier</td><td>See limitations (section 6)</td><td class="yes">Yes</td><td class="yes">Yes, every sentence</td></tr>
+    </tbody>
+  </table></div>
+  <p class="meta-line">Descriptions are from each vendor's or paper's public documentation. We did not benchmark these products directly; section 5 compares against a plain-RAG baseline built the way the first row describes.</p>
+</section>
+
+<section>
+  <div class="sec-head"><div class="eyebrow">3 · How it works</div><h2>The pipeline</h2></div>
+  <div class="prose"><p>Reading a document happens once, when it is added. Each question then runs a short, visible chain of steps.
+    The web UI shows every step live, with timings, so a user can see what was searched, what was found and what was checked.</p></div>
+  <div class="flow">
+    <div class="lane"><div class="lname">Add a file</div><div class="steps">
+      <div class="step"><em>parse</em><b>Read the file</b><span>PDF, DOCX, Markdown, TXT, images. Pages with no text layer go to OCR.</span></div>
+      <div class="step"><em>ocr</em><b>OCR with escalation</b><span>Tesseract detects the script (160+ languages). Pages with confidence below 60 are re-read by a vision model.</span></div>
+      <div class="step"><em>tree</em><b>Structure tree</b><span>Outline, headings, numbered sections or chapters become book › chapter › section, with page ranges.</span></div>
+      <div class="step small-m"><em>cards · gpt-oss-120b</em><b>Index cards</b><span>Bottom-up, one per section: summary, key terms, entities, questions it answers. Cached.</span></div>
+      <div class="step"><em>index · e5-small</em><b>Hybrid index</b><span>BM25 (with stems and CJK bigrams) + vectors over cards and 900-char passages; entity index.</span></div>
+    </div></div>
+    <div class="lane"><div class="lname">Ask</div><div class="steps">
+      <div class="step"><em>route</em><b>Router</b><span>Overview questions read top-level cards; all others search.</span></div>
+      <div class="step"><em>search</em><b>Search every document</b><span>Hybrid search + entity hits, one hit per section, ranked across documents by absolute similarity.</span></div>
+      <div class="step"><em>expand</em><b>Drill-down</b><span>A long or parent section is replaced by its best passages; a bare heading reads on into what follows.</span></div>
+      <div class="step big-m"><em>answer · gpt-oss-120b</em><b>Cited answer</b><span>Answers only from the numbered sources, citing [n], in the question's language.</span></div>
+      <div class="step small-m"><em>check · gpt-oss-20b</em><b>Citation check</b><span>Each cited sentence: supported, partly supported, re-cited to the right source, or not found.</span></div>
+    </div></div>
+    <div class="lane"><div class="lname">Remember</div><div class="steps">
+      <div class="step"><em>memory</em><b>History and feedback</b><span>Every Q&amp;A is logged; 👍 answers add their question to the section's card, so similar questions find it faster.</span></div>
+    </div></div>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Part</th><th>Software</th><th>Why this choice</th></tr></thead>
+    <tbody>
+      <tr><td>Card writer, answers</td><td><code>openai/gpt-oss-120b</code> on Groq</td><td>Best of 3 in our card-writer benchmark (hit@1 0.61 vs 0.58 / 0.52)</td></tr>
+      <tr><td>Citation check</td><td><code>openai/gpt-oss-20b</code> on Groq</td><td>Small and fast; checking is a simpler task than answering</td></tr>
+      <tr><td>Handwriting / bad scans</td><td><code>qwen/qwen3.8-27b</code> (vision) on Groq, or any local VLM</td><td>Reads what Tesseract cannot</td></tr>
+      <tr><td>Printed scans</td><td>Tesseract 5 (Surya optional)</td><td>Free, local, script auto-detection</td></tr>
+      <tr><td>Embeddings</td><td><code>intfloat/multilingual-e5-small</code>, local</td><td>bge-m3 and Qwen3-Embedding-0.6B were within noise; e5-small is the smallest</td></tr>
+      <tr><td>App</td><td>Python 3.11, FastAPI, NumPy, PyMuPDF, python-docx; one-file web UI</td><td><code>pip install -e .</code> then <code>cortex serve</code>; no database server needed</td></tr>
+      <tr><td>Keys and cost</td><td>Free Groq key first, paid key only after the free daily quota</td><td>Cards are cached by content hash, so nothing is paid for twice</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="sec-head"><div class="eyebrow">4 · What is new here</div><h2>Our contributions</h2></div>
+  <div class="cards">
+    <div class="card"><h3>The document's own outline as the index</h3><p>One tree builder for every format: PDF bookmarks, font-size headings, Markdown and wiki headings, RFC-style numbered sections (depth from the dots), roman-numeral chapters, or titled parts when there are no headings. Tables of contents and running page headers are removed.</p><div class="vs">RAPTOR invents a tree by clustering; PageIndex needs good headings. We use the real structure and fall back gracefully.</div></div>
+    <div class="card"><h3>Index cards from a small model</h3><p>Each section gets a card, written bottom-up so a chapter's card summarises its sections' cards. Cards add the words a reader would use ("dose", "side effects") that the original text may not contain.</p><div class="vs">Like Contextual Retrieval, but one card per section instead of per chunk, and cached by content hash.</div></div>
+    <div class="card"><h3>Sentence-level citation check</h3><p>A second, smaller model checks each cited sentence against the source it cites. If another source supports it, the citation is corrected; if none does, the sentence is flagged in the answer.</p><div class="vs">None of the systems in section 2 verify each claim after writing it.</div></div>
+    <div class="card"><h3>Cross-document ranking that works</h3><p>Fused search scores cannot be compared between documents, so the library ranks by absolute vector similarity and keeps a document only within a margin of the best one.</p><div class="vs">Found by testing: relevant documents score 0.85–0.88, unrelated ones 0.78–0.82.</div></div>
+    <div class="card"><h3>OCR that knows when it is unsure</h3><p>Tesseract runs first with automatic script detection. Its confidence decides whether a page goes to a vision model, so printed pages stay free and only hard pages cost an API call.</p><div class="vs">Measured in section 5: heavy English blur goes from 100% to 1.3% character error.</div></div>
+    <div class="card"><h3>Multilingual by design</h3><p>Sentence splitting understands the Devanagari danda (।) and Japanese 。; keyword search uses CJK bigrams; answers come back in the question's script. Tested on English, Hindi, Sanskrit, French, Japanese and Arabic.</p><div class="vs">Cross-language questions (English question, Hindi or Arabic text) are part of the benchmark.</div></div>
+    <div class="card"><h3>A visible reasoning trace</h3><p>Every step of reading and answering is shown in the UI as it happens: the outline found, cards written, what search returned and why, which key was used, and each claim's verdict.</p><div class="vs">Commercial tools show the answer and citations, not the process.</div></div>
+    <div class="card"><h3>Runs free, fails over cleanly</h3><p>Built for Groq's free tier: rate-limit retries, daily-quota detection, then a paid key on the same model so quality stays the same. Any OpenAI-compatible local server (LM Studio, MLX) also works.</p><div class="vs">The whole 15-document library in this report was indexed for well under a dollar.</div></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><div class="eyebrow">5 · How we tested, and the results</div><h2>An independent benchmark</h2></div>
+  <div class="prose">
+    <p>Earlier tests were small and written by the same people who built the system. For this report we built a larger
+      test set designed to be independent of the system:</p>
+    <ul class="clean">
+      <li><strong>Different model family.</strong> Questions were written by <code>qwen3.8-27b</code> (Alibaba's Qwen) from the
+        raw section text. The system's cards and answers come from <code>gpt-oss</code> (OpenAI). The question writer never saw the system's cards or answers.</li>
+      <li><strong>Gold answers proven by code.</strong> Every gold answer carries a quote from the document, and a script
+        checks that the quote really is in the document. <span id="dropped"></span></li>
+      <li><strong>Six question types</strong>: facts, numbers, questions needing two sections, document overviews,
+        <em>unanswerable</em> questions (the right answer is "the document doesn't say"), and cross-language questions.</li>
+      <li><strong>The hard setting.</strong> Every question is asked against the whole library of <span id="ndocs"></span> documents at once, so the system must also find the right document.</li>
+      <li><strong>A baseline.</strong> Plain RAG: the same 900-character passages, vectors only, top 6, the same answer model and prompt. This isolates what the tree, cards, hybrid search and drill-down add.</li>
+      <li><strong>Grading.</strong> <code>qwen3.8-27b</code> grades each answer as correct, partial or incorrect against the gold answer and quote. A 25-question spot-check sheet lets a person audit the grader.</li>
+    </ul>
+  </div>
+  <div class="tbl"><table id="docTable"></table></div>
+
+  <figure>
+    <figcaption><b>Answer accuracy by question type</b><span>Share of answers graded correct. Hover a bar for counts.</span></figcaption>
+    <div class="legend"><span><i style="background:var(--ours)"></i>Document Cortex</span><span><i style="background:var(--base)"></i>Plain RAG baseline</span></div>
+    <div class="chart" id="chType"></div>
+  </figure>
+
+  <div class="grid2">
+    <figure>
+      <figcaption><b>Did search find the evidence?</b><span>Share of questions where the gold quote is inside the sources given to the answer model.</span></figcaption>
+      <div class="legend"><span><i style="background:var(--ours)"></i>Document Cortex</span><span><i style="background:var(--base)"></i>Plain RAG</span></div>
+      <div class="chart" id="chRet"></div>
+    </figure>
+    <figure>
+      <figcaption><b>Accuracy by document language</b><span>Includes cross-language questions, grouped by the document's language.</span></figcaption>
+      <div class="legend"><span><i style="background:var(--ours)"></i>Document Cortex</span><span><i style="background:var(--base)"></i>Plain RAG</span></div>
+      <div class="chart" id="chLang"></div>
+    </figure>
+  </div>
+
+  <figure>
+    <figcaption><b>Accuracy per document</b><span>Correct answers per document, all question types.</span></figcaption>
+    <div class="legend"><span><i style="background:var(--ours)"></i>Document Cortex</span><span><i style="background:var(--base)"></i>Plain RAG</span></div>
+    <div class="chart" id="chDoc"></div>
+  </figure>
+
+  <div class="grid2">
+    <figure>
+      <figcaption><b>Citation check over all answers</b><span id="ckCap">Every cited sentence, as judged by the checker model.</span></figcaption>
+      <div class="chart" id="chCheck"></div>
+      <div class="legend" id="ckLegend"></div>
+    </figure>
+    <figure>
+      <figcaption><b>OCR character error rate</b><span>Synthetic scans of known text at four damage levels. Lower is better.</span></figcaption>
+      <div class="legend"><span><i style="background:var(--base)"></i>Tesseract alone</span><span><i style="background:var(--ours)"></i>Our pipeline (Tesseract → vision model when unsure)</span></div>
+      <div class="chart" id="chOcr"></div>
+    </figure>
+  </div>
+
+  <div class="grid2">
+    <figure>
+      <figcaption><b>Earlier benchmark: who writes the cards</b><span>33 hand-labelled questions over 4 herbs of the Bhavaprakasha; hit@1 = right section ranked first.</span></figcaption>
+      <div class="chart" id="chCards"></div>
+    </figure>
+    <figure>
+      <figcaption><b>Earlier benchmark: search method</b><span>Same 33 questions; MRR (1 = always ranked first).</span></figcaption>
+      <div class="chart" id="chSearch"></div>
+    </figure>
+  </div>
+
+  <div class="tbl"><table id="sumTable"></table></div>
+
+  <div class="ex">
+    <h3>Example answers from the benchmark</h3>
+    <div id="examples" class="ex"></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><div class="eyebrow">6 · Limitations</div><h2>What the numbers do not show</h2></div>
+  <div class="note" id="limits"></div>
+</section>
+
+<section>
+  <div class="sec-head"><div class="eyebrow">7 · Next steps</div><h2>Roadmap</h2></div>
+  <ul class="clean">
+    <li><strong>Knowledge graph (Neo4j)</strong> for the Ayurveda corpus: herbs, properties (rasa, guna, virya), diseases and formulations as typed relations, so questions like "which bitter herbs pacify pitta?" are answered by a graph query instead of search.</li>
+    <li><strong>Better OCR for damaged Indic scans</strong>: escalate on Hindi pages even when Tesseract is confident, and try a stronger vision model.</li>
+    <li><strong>Reranker</strong>: our Qwen3 reranker integration lowered accuracy (suspected prompt truncation); fix and re-test.</li>
+    <li><strong>Tables and figures</strong> as first-class sections, and page-level citations inside long PDF sections.</li>
+    <li><strong>Human-graded test set</strong> to calibrate the automatic grader, using the spot-check sheet.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="sec-head"><div class="eyebrow">8 · Reproduce it</div><h2>Run the benchmark yourself</h2></div>
+  <pre>git clone https://github.com/Pradhumn115/document-cortex.git &amp;&amp; cd document-cortex
+pip install -e .
+python3 scripts/fetch_samples.py &amp;&amp; cortex add samples/*
+python3 -m cortex.evalset generate   # questions + code-checked quotes  -> bench/eval_v1.jsonl
+python3 -m cortex.evalset run        # ours + plain-RAG baseline        -> bench/results_v1.jsonl
+python3 -m cortex.evalset score      # grades, summary, spot-check sheet
+python3 -m cortex.evalset ocr        # OCR character error rate</pre>
+</section>
+
+<footer id="foot"></footer>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+const D = {"summary": {"overall": {"questions": 272, "documents": 15, "ours": {"n": 272, "correct": 235, "partial": 14, "incorrect": 23, "errors": 0, "accuracy": 0.864, "score": 0.89}, "base": {"n": 272, "correct": 221, "partial": 17, "incorrect": 34, "errors": 0, "accuracy": 0.812, "score": 0.844}, "ret_ours": {"n": 231, "evidence_all": 0.883, "evidence_any": 0.9, "right_doc": 0.944, "hit@1": 0.649, "mrr": 0.743}, "ret_base": {"n": 231, "evidence_all": 0.758, "evidence_any": 0.792, "right_doc": 0.87, "hit@1": 0.485, "mrr": 0.595}, "citations": {"claims": 593, "uncited": 115, "supported": 410, "partial": 47, "recited": 0, "unsupported": 18}, "latency": {"answer_median": 1.17, "answer_p90": 4.2, "with_check_median": 2.51}}, "by_type": {"cross_lang": {"ours": {"n": 57, "correct": 43, "partial": 2, "incorrect": 12, "errors": 0, "accuracy": 0.754, "score": 0.772}, "base": {"n": 57, "correct": 35, "partial": 3, "incorrect": 19, "errors": 0, "accuracy": 0.614, "score": 0.64}, "ret_ours": {"n": 57, "evidence_all": 0.649, "evidence_any": 0.649, "right_doc": 0.789, "hit@1": 0.263, "mrr": 0.397}, "ret_base": {"n": 57, "evidence_all": 0.368, "evidence_any": 0.368, "right_doc": 0.491, "hit@1": 0.14, "mrr": 0.22}}, "fact": {"ours": {"n": 105, "correct": 100, "partial": 1, "incorrect": 4, "errors": 0, "accuracy": 0.952, "score": 0.957}, "base": {"n": 105, "correct": 96, "partial": 1, "incorrect": 8, "errors": 0, "accuracy": 0.914, "score": 0.919}, "ret_ours": {"n": 105, "evidence_all": 0.971, "evidence_any": 0.971, "right_doc": 0.99, "hit@1": 0.781, "mrr": 0.857}, "ret_base": {"n": 105, "evidence_all": 0.924, "evidence_any": 0.924, "right_doc": 0.99, "hit@1": 0.648, "mrr": 0.751}}, "multi": {"ours": {"n": 22, "correct": 16, "partial": 4, "incorrect": 2, "errors": 0, "accuracy": 0.727, "score": 0.818}, "base": {"n": 22, "correct": 19, "partial": 2, "incorrect": 1, "errors": 0, "accuracy": 0.864, "score": 0.909}, "ret_ours": {"n": 22, "evidence_all": 0.818, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.5, "mrr": 0.678}, "ret_base": {"n": 22, "evidence_all": 0.636, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.136, "mrr": 0.424}}, "number": {"ours": {"n": 47, "correct": 46, "partial": 1, "incorrect": 0, "errors": 0, "accuracy": 0.979, "score": 0.989}, "base": {"n": 47, "correct": 46, "partial": 0, "incorrect": 1, "errors": 0, "accuracy": 0.979, "score": 0.979}, "ret_ours": {"n": 47, "evidence_all": 1.0, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.894, "mrr": 0.94}, "ret_base": {"n": 47, "evidence_all": 0.915, "evidence_any": 0.915, "right_doc": 1.0, "hit@1": 0.702, "mrr": 0.781}}, "overview": {"ours": {"n": 15, "correct": 10, "partial": 5, "incorrect": 0, "errors": 0, "accuracy": 0.667, "score": 0.833}, "base": {"n": 15, "correct": 3, "partial": 11, "incorrect": 1, "errors": 0, "accuracy": 0.2, "score": 0.567}, "ret_ours": {"n": 0, "evidence_all": 0.0, "evidence_any": 0.0, "right_doc": 0.0, "hit@1": 0.0, "mrr": 0.0}, "ret_base": {"n": 0, "evidence_all": 0.0, "evidence_any": 0.0, "right_doc": 0.0, "hit@1": 0.0, "mrr": 0.0}}, "unanswerable": {"ours": {"n": 26, "correct": 20, "partial": 1, "incorrect": 5, "errors": 0, "accuracy": 0.769, "score": 0.788}, "base": {"n": 26, "correct": 22, "partial": 0, "incorrect": 4, "errors": 0, "accuracy": 0.846, "score": 0.846}, "ret_ours": {"n": 0, "evidence_all": 0.0, "evidence_any": 0.0, "right_doc": 0.0, "hit@1": 0.0, "mrr": 0.0}, "ret_base": {"n": 0, "evidence_all": 0.0, "evidence_any": 0.0, "right_doc": 0.0, "hit@1": 0.0, "mrr": 0.0}}}, "by_doc": {"Ml-mini": {"ours": {"n": 8, "correct": 8, "partial": 0, "incorrect": 0, "errors": 0, "accuracy": 1.0, "score": 1.0}, "base": {"n": 8, "correct": 6, "partial": 0, "incorrect": 2, "errors": 0, "accuracy": 0.75, "score": 0.75}, "ret_ours": {"n": 5, "evidence_all": 1.0, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.6, "mrr": 0.8}, "ret_base": {"n": 5, "evidence_all": 0.8, "evidence_any": 0.8, "right_doc": 0.8, "hit@1": 0.2, "mrr": 0.433}}, "alice-in-wonderland": {"ours": {"n": 17, "correct": 15, "partial": 1, "incorrect": 1, "errors": 0, "accuracy": 0.882, "score": 0.912}, "base": {"n": 17, "correct": 15, "partial": 1, "incorrect": 1, "errors": 0, "accuracy": 0.882, "score": 0.912}, "ret_ours": {"n": 14, "evidence_all": 0.929, "evidence_any": 0.929, "right_doc": 1.0, "hit@1": 0.786, "mrr": 0.827}, "ret_base": {"n": 14, "evidence_all": 0.857, "evidence_any": 0.929, "right_doc": 1.0, "hit@1": 0.429, "mrr": 0.606}}, "attention-is-all-you-need-1706.03762": {"ours": {"n": 16, "correct": 16, "partial": 0, "incorrect": 0, "errors": 0, "accuracy": 1.0, "score": 1.0}, "base": {"n": 16, "correct": 13, "partial": 1, "incorrect": 2, "errors": 0, "accuracy": 0.812, "score": 0.844}, "ret_ours": {"n": 14, "evidence_all": 1.0, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.643, "mrr": 0.786}, "ret_base": {"n": 14, "evidence_all": 0.571, "evidence_any": 0.714, "right_doc": 1.0, "hit@1": 0.286, "mrr": 0.429}}, "bhav-guduchi": {"ours": {"n": 26, "correct": 20, "partial": 2, "incorrect": 4, "errors": 0, "accuracy": 0.769, "score": 0.808}, "base": {"n": 26, "correct": 19, "partial": 4, "incorrect": 3, "errors": 0, "accuracy": 0.731, "score": 0.808}, "ret_ours": {"n": 24, "evidence_all": 0.833, "evidence_any": 0.875, "right_doc": 1.0, "hit@1": 0.542, "mrr": 0.631}, "ret_base": {"n": 24, "evidence_all": 0.708, "evidence_any": 0.75, "right_doc": 0.958, "hit@1": 0.458, "mrr": 0.543}}, "gift-of-the-magi": {"ours": {"n": 8, "correct": 6, "partial": 1, "incorrect": 1, "errors": 0, "accuracy": 0.75, "score": 0.812}, "base": {"n": 8, "correct": 6, "partial": 1, "incorrect": 1, "errors": 0, "accuracy": 0.75, "score": 0.812}, "ret_ours": {"n": 6, "evidence_all": 0.833, "evidence_any": 0.833, "right_doc": 1.0, "hit@1": 0.667, "mrr": 0.75}, "ret_base": {"n": 6, "evidence_all": 0.833, "evidence_any": 0.833, "right_doc": 1.0, "hit@1": 0.167, "mrr": 0.394}}, "nadi-darshan-p40-47-scan": {"ours": {"n": 11, "correct": 9, "partial": 2, "incorrect": 0, "errors": 0, "accuracy": 0.818, "score": 0.909}, "base": {"n": 11, "correct": 9, "partial": 1, "incorrect": 1, "errors": 0, "accuracy": 0.818, "score": 0.864}, "ret_ours": {"n": 8, "evidence_all": 1.0, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.75, "mrr": 0.875}, "ret_base": {"n": 8, "evidence_all": 0.75, "evidence_any": 0.75, "right_doc": 1.0, "hit@1": 0.375, "mrr": 0.5}}, "raptor-2401.18059": {"ours": {"n": 17, "correct": 16, "partial": 0, "incorrect": 1, "errors": 0, "accuracy": 0.941, "score": 0.941}, "base": {"n": 17, "correct": 14, "partial": 0, "incorrect": 3, "errors": 0, "accuracy": 0.824, "score": 0.824}, "ret_ours": {"n": 14, "evidence_all": 0.929, "evidence_any": 0.929, "right_doc": 0.929, "hit@1": 0.786, "mrr": 0.833}, "ret_base": {"n": 14, "evidence_all": 0.786, "evidence_any": 0.786, "right_doc": 1.0, "hit@1": 0.643, "mrr": 0.702}}, "rfc2324-htcpcp": {"ours": {"n": 17, "correct": 16, "partial": 0, "incorrect": 1, "errors": 0, "accuracy": 0.941, "score": 0.941}, "base": {"n": 17, "correct": 14, "partial": 2, "incorrect": 1, "errors": 0, "accuracy": 0.824, "score": 0.882}, "ret_ours": {"n": 14, "evidence_all": 1.0, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.929, "mrr": 0.952}, "ret_base": {"n": 14, "evidence_all": 0.857, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.714, "mrr": 0.806}}, "rfc9110-http-semantics": {"ours": {"n": 17, "correct": 13, "partial": 2, "incorrect": 2, "errors": 0, "accuracy": 0.765, "score": 0.824}, "base": {"n": 17, "correct": 14, "partial": 1, "incorrect": 2, "errors": 0, "accuracy": 0.824, "score": 0.853}, "ret_ours": {"n": 14, "evidence_all": 0.929, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.857, "mrr": 0.929}, "ret_base": {"n": 14, "evidence_all": 0.929, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.786, "mrr": 0.869}}, "wiki-ar": {"ours": {"n": 15, "correct": 14, "partial": 0, "incorrect": 1, "errors": 0, "accuracy": 0.933, "score": 0.933}, "base": {"n": 15, "correct": 13, "partial": 1, "incorrect": 1, "errors": 0, "accuracy": 0.867, "score": 0.9}, "ret_ours": {"n": 12, "evidence_all": 0.667, "evidence_any": 0.667, "right_doc": 0.667, "hit@1": 0.417, "mrr": 0.489}, "ret_base": {"n": 12, "evidence_all": 0.583, "evidence_any": 0.583, "right_doc": 0.583, "hit@1": 0.417, "mrr": 0.472}}, "wiki-en-ayurveda": {"ours": {"n": 17, "correct": 16, "partial": 1, "incorrect": 0, "errors": 0, "accuracy": 0.941, "score": 0.971}, "base": {"n": 17, "correct": 16, "partial": 1, "incorrect": 0, "errors": 0, "accuracy": 0.941, "score": 0.971}, "ret_ours": {"n": 14, "evidence_all": 0.929, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.857, "mrr": 0.881}, "ret_base": {"n": 14, "evidence_all": 0.929, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.857, "mrr": 0.875}}, "wiki-en-photosynthesis": {"ours": {"n": 16, "correct": 16, "partial": 0, "incorrect": 0, "errors": 0, "accuracy": 1.0, "score": 1.0}, "base": {"n": 16, "correct": 15, "partial": 1, "incorrect": 0, "errors": 0, "accuracy": 0.938, "score": 0.969}, "ret_ours": {"n": 14, "evidence_all": 1.0, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.929, "mrr": 0.964}, "ret_base": {"n": 14, "evidence_all": 1.0, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.786, "mrr": 0.875}}, "wiki-fr": {"ours": {"n": 29, "correct": 25, "partial": 2, "incorrect": 2, "errors": 0, "accuracy": 0.862, "score": 0.897}, "base": {"n": 29, "correct": 25, "partial": 1, "incorrect": 3, "errors": 0, "accuracy": 0.862, "score": 0.879}, "ret_ours": {"n": 26, "evidence_all": 0.962, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.615, "mrr": 0.764}, "ret_base": {"n": 26, "evidence_all": 0.885, "evidence_any": 0.885, "right_doc": 0.885, "hit@1": 0.5, "mrr": 0.649}}, "wiki-hi": {"ours": {"n": 29, "correct": 23, "partial": 2, "incorrect": 4, "errors": 0, "accuracy": 0.793, "score": 0.828}, "base": {"n": 29, "correct": 20, "partial": 1, "incorrect": 8, "errors": 0, "accuracy": 0.69, "score": 0.707}, "ret_ours": {"n": 26, "evidence_all": 0.808, "evidence_any": 0.808, "right_doc": 1.0, "hit@1": 0.462, "mrr": 0.599}, "ret_base": {"n": 26, "evidence_all": 0.538, "evidence_any": 0.538, "right_doc": 0.615, "hit@1": 0.269, "mrr": 0.391}}, "wiki-ja": {"ours": {"n": 29, "correct": 22, "partial": 1, "incorrect": 6, "errors": 0, "accuracy": 0.759, "score": 0.776}, "base": {"n": 29, "correct": 22, "partial": 1, "incorrect": 6, "errors": 0, "accuracy": 0.759, "score": 0.776}, "ret_ours": {"n": 26, "evidence_all": 0.692, "evidence_any": 0.692, "right_doc": 0.692, "hit@1": 0.385, "mrr": 0.511}, "ret_base": {"n": 26, "evidence_all": 0.615, "evidence_any": 0.615, "right_doc": 0.615, "hit@1": 0.308, "mrr": 0.421}}}, "by_language": {"Arabic": {"ours": {"n": 12, "correct": 11, "partial": 0, "incorrect": 1, "errors": 0, "accuracy": 0.917, "score": 0.917}, "base": {"n": 12, "correct": 10, "partial": 1, "incorrect": 1, "errors": 0, "accuracy": 0.833, "score": 0.875}, "ret_ours": {"n": 12, "evidence_all": 0.667, "evidence_any": 0.667, "right_doc": 0.667, "hit@1": 0.417, "mrr": 0.489}, "ret_base": {"n": 12, "evidence_all": 0.583, "evidence_any": 0.583, "right_doc": 0.583, "hit@1": 0.417, "mrr": 0.472}}, "English": {"ours": {"n": 150, "correct": 132, "partial": 8, "incorrect": 10, "errors": 0, "accuracy": 0.88, "score": 0.907}, "base": {"n": 150, "correct": 122, "partial": 13, "incorrect": 15, "errors": 0, "accuracy": 0.813, "score": 0.857}, "ret_ours": {"n": 109, "evidence_all": 0.954, "evidence_any": 0.972, "right_doc": 0.991, "hit@1": 0.807, "mrr": 0.871}, "ret_base": {"n": 109, "evidence_all": 0.844, "evidence_any": 0.908, "right_doc": 0.991, "hit@1": 0.596, "mrr": 0.705}}, "French": {"ours": {"n": 26, "correct": 24, "partial": 2, "incorrect": 0, "errors": 0, "accuracy": 0.923, "score": 0.962}, "base": {"n": 26, "correct": 24, "partial": 0, "incorrect": 2, "errors": 0, "accuracy": 0.923, "score": 0.923}, "ret_ours": {"n": 26, "evidence_all": 0.962, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.615, "mrr": 0.764}, "ret_base": {"n": 26, "evidence_all": 0.885, "evidence_any": 0.885, "right_doc": 0.885, "hit@1": 0.5, "mrr": 0.649}}, "Hindi": {"ours": {"n": 54, "correct": 45, "partial": 1, "incorrect": 8, "errors": 0, "accuracy": 0.833, "score": 0.843}, "base": {"n": 54, "correct": 41, "partial": 2, "incorrect": 11, "errors": 0, "accuracy": 0.759, "score": 0.778}, "ret_ours": {"n": 54, "evidence_all": 0.833, "evidence_any": 0.852, "right_doc": 1.0, "hit@1": 0.574, "mrr": 0.682}, "ret_base": {"n": 54, "evidence_all": 0.667, "evidence_any": 0.685, "right_doc": 0.796, "hit@1": 0.389, "mrr": 0.498}}, "Japanese": {"ours": {"n": 26, "correct": 21, "partial": 1, "incorrect": 4, "errors": 0, "accuracy": 0.808, "score": 0.827}, "base": {"n": 26, "correct": 22, "partial": 0, "incorrect": 4, "errors": 0, "accuracy": 0.846, "score": 0.846}, "ret_ours": {"n": 26, "evidence_all": 0.692, "evidence_any": 0.692, "right_doc": 0.692, "hit@1": 0.385, "mrr": 0.511}, "ret_base": {"n": 26, "evidence_all": 0.615, "evidence_any": 0.615, "right_doc": 0.615, "hit@1": 0.308, "mrr": 0.421}}, "Sanskrit": {"ours": {"n": 4, "correct": 2, "partial": 2, "incorrect": 0, "errors": 0, "accuracy": 0.5, "score": 0.75}, "base": {"n": 4, "correct": 2, "partial": 1, "incorrect": 1, "errors": 0, "accuracy": 0.5, "score": 0.625}, "ret_ours": {"n": 4, "evidence_all": 1.0, "evidence_any": 1.0, "right_doc": 1.0, "hit@1": 0.0, "mrr": 0.225}, "ret_base": {"n": 4, "evidence_all": 0.25, "evidence_any": 0.25, "right_doc": 1.0, "hit@1": 0.0, "mrr": 0.083}}}, "label_audit": {"unanswerable_checked": 30, "answered_by_document": 4, "excluded": [{"id": "q015", "question": "What specific hardware configuration is required to train the Transformer model on the WMT 2014 English-to-German dataset?", "quote": "We trained our models on one machine with 8 NVIDIA P100 GPUs."}, {"id": "q061", "question": "What are the specific dosage recommendations for Tinospora cordifolia (Giloy) when treating diabetes according to the Bhavaprakasha?", "quote": "((3) प्रमेह, मूत्रविकार) गुड़ूची स्वरस — 2–3 ड्रा. (60-90 ml) + पाषाणभेद चूर्ण — 5–8 g + मधु / दुग्ध + शर्करा — दिने 3x पायें।"}, {"id": "q070", "question": "What specific items did Jim purchase with the money he received from selling his watch in O. Henry's 'The Gift of the Magi'?", "quote": "I sold the watch to get the money to buy your combs."}, {"id": "q240", "question": "What is the specific impact of elevated atmospheric carbon dioxide concentrations on the rate of photosynthesis in C3 versus C4 plant species?", "quote": "At 1000 ppm CO2 in measuring air, both the C3 and C4 plants had similar leaf photosynthetic rates around 60 μmol CO2·m−2·s−1 indicating the suppression of photorespiration in C3 plants."}]}}, "ocr": {"English": {"clean": {"cer": 0.0, "conf": 95.9, "sec": 0.46, "cer_auto": 0.0}, "light": {"cer": 0.0, "conf": 95.6, "sec": 0.26, "cer_auto": 0.0}, "medium": {"cer": 0.346, "conf": 57.8, "sec": 0.23, "cer_auto": 0.0, "sec_auto": 2.66}, "heavy": {"cer": 1.0, "conf": 0.0, "sec": 0.08, "cer_auto": 0.0133, "sec_auto": 1.64}}, "Hindi": {"clean": {"cer": 0.0077, "conf": 93.5, "sec": 0.52, "cer_auto": 0.0077}, "light": {"cer": 0.0058, "conf": 93.7, "sec": 0.59, "cer_auto": 0.0058}, "medium": {"cer": 0.1349, "conf": 79.1, "sec": 0.65, "cer_auto": 0.1349}, "heavy": {"cer": 1.0, "conf": 0.0, "sec": 0.1, "cer_auto": 0.6956, "sec_auto": 12.86}}}, "docs": [{"slug": "alice-in-wonderland", "short": "Alice in Wonderland", "name": "Alice in Wonderland", "format": "Plain text", "language": "English", "structure": "chapter headings: 24 (12 table-of-contents entries removed)", "sections": 12, "questions": 17}, {"slug": "attention-is-all-you-need-1706.03762", "short": "Attention Is All You Need", "name": "Attention Is All You Need", "format": "PDF", "language": "English", "structure": "PDF outline (bookmarks): 22 entries", "sections": 22, "questions": 17}, {"slug": "wiki-en-ayurveda", "short": "Ayurveda (English wiki)", "name": "Ayurveda (English wiki)", "format": "Plain text", "language": "English", "structure": "Wikipedia-style headings (== … ==): 30", "sections": 30, "questions": 17}, {"slug": "bhav-guduchi", "short": "Bhavaprakasha: गुडूची", "name": "Bhavaprakasha: गुडूची", "format": "Markdown", "language": "Hindi / Sanskrit", "structure": "headings", "sections": 28, "questions": 27}, {"slug": "Ml-mini", "short": "Handwritten ML notes (scan)", "name": "Handwritten ML notes (scan)", "format": "Scanned PDF, handwriting", "language": "English", "structure": "OCR marked 48 lines as headings but 35 of 48 had no text und", "sections": 4, "questions": 8}, {"slug": "nadi-darshan-p40-47-scan", "short": "Nadi Darshan (scanned Hindi)", "name": "Nadi Darshan (scanned Hindi)", "format": "Scanned PDF", "language": "Hindi", "structure": "headings", "sections": 2, "questions": 11}, {"slug": "wiki-en-photosynthesis", "short": "Photosynthesis (English wiki)", "name": "Photosynthesis (English wiki)", "format": "Plain text", "language": "English", "structure": "Wikipedia-style headings (== … ==): 32", "sections": 32, "questions": 17}, {"slug": "wiki-fr", "short": "Photosynthèse (French wiki, DOCX)", "name": "Photosynthèse (French wiki, DOCX)", "format": "Word (DOCX)", "language": "French", "structure": "headings", "sections": 21, "questions": 29}, {"slug": "raptor-2401.18059", "short": "RAPTOR paper", "name": "RAPTOR paper", "format": "PDF", "language": "English", "structure": "headings", "sections": 23, "questions": 17}, {"slug": "rfc2324-htcpcp", "short": "RFC 2324 (HTCPCP)", "name": "RFC 2324 (HTCPCP)", "format": "Plain text", "language": "English", "structure": "headings", "sections": 28, "questions": 17}, {"slug": "rfc9110-http-semantics", "short": "RFC 9110 (HTTP Semantics)", "name": "RFC 9110 (HTTP Semantics)", "format": "Plain text", "language": "English", "structure": "numbered headings (1., 2.1, …): 711, nested by number depth", "sections": 711, "questions": 17}, {"slug": "gift-of-the-magi", "short": "The Gift of the Magi", "name": "The Gift of the Magi", "format": "Plain text", "language": "English", "structure": "headings", "sections": 9, "questions": 9}, {"slug": "wiki-ar", "short": "تمثيل ضوئي (Arabic wiki)", "name": "تمثيل ضوئي (Arabic wiki)", "format": "Plain text", "language": "Arabic", "structure": "headings", "sections": 7, "questions": 15}, {"slug": "wiki-hi", "short": "आयुर्वेद (Hindi wiki)", "name": "आयुर्वेद (Hindi wiki)", "format": "Plain text", "language": "Hindi", "structure": "headings", "sections": 58, "questions": 29}, {"slug": "wiki-ja", "short": "光合成 (Japanese wiki)", "name": "光合成 (Japanese wiki)", "format": "Plain text", "language": "Japanese", "structure": "headings", "sections": 17, "questions": 29}], "examples": [{"type": "cross_lang", "doc": "Photosynthèse (French wiki, DOCX)", "question": "In the action spectrum of chlorophyll a mentioned in the article on photosynthesis, what is the approximate wavelength of the red rays absorbed?", "gold": "680 nm", "ours": "The action spectrum of chlorophyll a shows a red absorption peak at roughly **680 nm**[6].", "g_ours": "correct", "g_base": "incorrect"}, {"type": "fact", "doc": "RAPTOR paper", "question": "According to the hallucination analysis in the RAPTOR paper, what was the most common cause of hallucinations in the generated summaries?", "gold": "The model adding minor information from its training data or incorrectly extrapolating information", "ours": "The analysis found that the majority of hallucinations arose when the model inserted minor details that were not in the original text—often pulling information from its training data or incorrectly extrapolating facts when forming the summary[1].", "g_ours": "correct", "g_base": "incorrect"}, {"type": "number", "doc": "RAPTOR paper", "question": "According to the RAPTOR paper, how many language models were used in the controlled experiments to demonstrate RAPTOR's effectiveness?", "gold": "3", "ours": "The RAPTOR paper reports that the controlled experiments were run with **three language models** – UnifiedQA, GPT‑3, and GPT‑4[6].", "g_ours": "correct", "g_base": "incorrect"}, {"type": "overview", "doc": "Handwritten ML notes (scan)", "question": "Give me an overview of “Ml-mini.pdf”: what is it about and what are its main parts?", "gold": "Main parts: Classification Algorithms and Experimental Design Overview — Part 1 (p. 1–5); Normalization, Naive Bayes, and Regression Overview — Part 2 (p. 6–12); Ridge Regression Example and Hyperparameter Tuning — Part ", "ours": "**Overview of Ml‑mini.pdf**\n\nThe document is a compact tutorial on basic machine‑learning techniques and their practical implementation. It is organized into four sequential parts:\n\n| Part | Content |\n|------|---------|\n| **Part 1 (pages 1‑5)** | Reviews three fundamental classification algorithms – K‑Nearest Neighbors, Naive Bayes, and Decision Tree – describing their requirements, feature‑extraction examples, and preprocessing (min‑max, Z‑score) methods. It also outlines experimental design with k‑fold (including stratified) cross‑validation and presents a histopathological image case study of 150 patients. |\n| **Part 2 (pages 6‑12)** | Demonstrates data‑preprocessing techniques (Z‑score, ", "g_ours": "correct", "g_base": "incorrect"}, {"type": "cross_lang", "doc": "आयुर्वेद (Hindi wiki)", "question": "How many main types of Shastrakarma (surgery) are described in Ayurveda?", "gold": "8", "ours": "Ayurveda describes **two main types of Shastrakarma (surgery)** – the surgical branch Śalya‑cikitsā (or Śalyatantra) and the branch dealing with cavities and openings, Śālākya‑tantra [1][4].", "g_ours": "incorrect", "g_base": "incorrect"}], "limits": ["<b>The grader is a model, not a person.<\/b> qwen3.8-27b graded every answer. The 25-question spot-check sheet (<code>bench/spotcheck_v1.md<\/code>) is there so a person can measure how often it is wrong; that audit has not been done yet.", "<b>Generated questions are easier than real ones.<\/b> Most are written from a single section and name their subject. Real users ask vaguer questions. The overview (15) and two-section (22) groups are small, so their percentages move a lot with one or two answers.", "<b>Some gold labels were wrong.<\/b> 4 of 30 questions the generator called unanswerable are in fact answered by the document (for example, the Transformer paper does say it trained on 8 P100 GPUs). An audit step found them and they are excluded from all numbers above.", "<b>The benchmark found a real bug, now fixed.<\/b> Asked across the whole library, an overview question used the first six documents instead of the one it named. Before the fix, overview accuracy was 27%; the numbers above are after the fix, with the overview questions re-run.", "<b>Where plain RAG does better.<\/b> On two-section questions (73% vs 86%) and on unanswerable questions (77% vs 85%) our system is behind. In the unanswerable failures, the answer model filled the gap from its own general knowledge; the citation check flagged some of those sentences as only partly supported, but not all.", "<b>OCR on damaged Indic scans.<\/b> On the medium-damage Hindi scan, Tesseract reported high confidence (79) while getting 13% of characters wrong, so the page was never sent to the vision model. On the heavy-damage Hindi scan, even the vision model got 70% wrong. English scans recover fully.", "<b>Speed depends on the API tier.<\/b> Times were measured on Groq's paid tier. On the free tier, rate limits stretch a typical answer to about 7 seconds.", "<b>Competitors were not run.<\/b> Section 2 describes them from public documentation. The baseline uses our small e5 embedder without a reranker; commercial systems use larger embedders and rerankers, so they would be stronger than this baseline."], "generated": 279, "langs": 6, "base_latency": 0.78, "date": "13 November 2026", "sig": {"n": 272, "ours_only": 26, "base_only": 12, "mcnemar_p": 0.0336, "diff_ci95": [0.011, 0.096]}, "audit": {"unanswerable_checked": 30, "answered_by_document": 4, "excluded": [{"id": "q015", "question": "What specific hardware configuration is required to train the Transformer model on the WMT 2014 English-to-German dataset?", "quote": "We trained our models on one machine with 8 NVIDIA P100 GPUs."}, {"id": "q061", "question": "What are the specific dosage recommendations for Tinospora cordifolia (Giloy) when treating diabetes according to the Bhavaprakasha?", "quote": "((3) प्रमेह, मूत्रविकार) गुड़ूची स्वरस — 2–3 ड्रा. (60-90 ml) + पाषाणभेद चूर्ण — 5–8 g + मधु / दुग्ध + शर्करा — दिने 3x पायें।"}, {"id": "q070", "question": "What specific items did Jim purchase with the money he received from selling his watch in O. Henry's 'The Gift of the Magi'?", "quote": "I sold the watch to get the money to buy your combs."}, {"id": "q240", "question": "What is the specific impact of elevated atmospheric carbon dioxide concentrations on the rate of photosynthesis in C3 versus C4 plant species?", "quote": "At 1000 ppm CO2 in measuring air, both the C3 and C4 plants had similar leaf photosynthetic rates around 60 μmol CO2·m−2·s−1 indicating the suppression of photorespiration in C3 plants."}]}};
+const $ = id => document.getElementById(id);
+const pct = x => (x * 100).toFixed(0) + "%";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const tip = $("tip");
+function bindTips(root) {
+  root.querySelectorAll("[data-tip]").forEach(el => {
+    el.addEventListener("mousemove", e => { tip.hidden = false; tip.innerHTML = el.dataset.tip;
+      const x = Math.min(e.clientX + 14, innerWidth - 270); tip.style.left = x + "px"; tip.style.top = (e.clientY + 14) + "px"; });
+    el.addEventListener("mouseleave", () => tip.hidden = true);
+  });
+}
+const NS = "http://www.w3.org/2000/svg";
+// Horizontal grouped bars, 0..max on one shared scale. rows: [{label, vals:[{v, color, tip}]}]
+function hbars(el, rows, {max = 1, fmt = pct, labelW = 170, barH = 13, gap = 3, rowGap = 14, ticks = [0, .25, .5, .75, 1]} = {}) {
+  const W = 760, right = 52, plotW = W - labelW - right;
+  const per = rows[0].vals.length * barH + (rows[0].vals.length - 1) * gap;
+  const H = 24 + rows.length * (per + rowGap);
+  const x = v => labelW + (v / max) * plotW;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img">`;
+  ticks.forEach(t => { s += `<line class="gl" x1="${x(t)}" x2="${x(t)}" y1="0" y2="${H - 22}"/><text class="ax" x="${x(t)}" y="${H - 6}" text-anchor="middle">${fmt(t)}</text>`; });
+  rows.forEach((r, i) => {
+    const y0 = 6 + i * (per + rowGap);
+    s += `<text class="lab" x="${labelW - 10}" y="${y0 + per / 2 + 4}" text-anchor="end">${esc(r.label)}</text>`;
+    r.vals.forEach((b, j) => {
+      const y = y0 + j * (barH + gap), w = Math.max(0, x(b.v) - labelW);
+      s += `<path class="mark" data-tip="${esc(b.tip || fmt(b.v))}" fill="${b.color}" d="M${labelW},${y} h${Math.max(0, w - 4)} q4,0 4,4 v${barH - 8} q0,4 -4,4 h-${Math.max(0, w - 4)} z"/>`;
+      s += `<text class="val" x="${x(b.v) + 6}" y="${y + barH - 2}">${fmt(b.v)}</text>`;
+    });
+  });
+  el.innerHTML = s + "</svg>"; bindTips(el);
+}
+function stack(el, parts, total) {
+  const W = 760, H = 46; let x = 0, s = `<svg viewBox="0 0 ${W} ${H}" role="img">`;
+  parts.forEach(p => { const w = (p.n / total) * W; if (w <= 0) return;
+    s += `<rect class="mark" data-tip="${esc(p.label)}: ${p.n} (${pct(p.n / total)})" x="${x}" y="4" width="${Math.max(0, w - 2)}" height="30" rx="4" fill="${p.color}"/>`;
+    if (w > 46) s += `<text x="${x + 8}" y="24" style="fill:#fff;font-size:12px;font-weight:600">${pct(p.n / total)}</text>`;
+    x += w; });
+  el.innerHTML = s + "</svg>"; bindTips(el);
+}
+const O = "var(--ours)", B = "var(--base)";
+const TYPE_NAMES = {fact: "Fact", number: "Number / date", multi: "Needs two sections", overview: "Document overview", unanswerable: "Unanswerable (should refuse)", cross_lang: "Cross-language"};
+
+function render() {
+  const ov = D.summary.overall, bt = D.summary.by_type;
+  $("metaLine").textContent = `${ov.questions} questions · ${ov.documents} documents · ${D.langs} languages · generated ${D.date}`;
+  const ck = ov.citations, checked = ck.supported + ck.partial + ck.recited + ck.unsupported;
+  const kp = [
+    [pct(ov.ours.accuracy), "answers fully correct", `plain RAG: ${pct(ov.base.accuracy)}`],
+    [pct(ov.ret_ours.evidence_any), "questions where search found the evidence", `plain RAG: ${pct(ov.ret_base.evidence_any)}`],
+    [pct((ck.supported + ck.recited) / Math.max(1, checked)), "cited sentences supported by their source", `${ck.unsupported} of ${checked} flagged as not found`],
+    [ov.latency.answer_median.toFixed(1) + " s", "median time to answer", `${ov.latency.with_check_median.toFixed(1)} s with the citation check`],
+  ];
+  $("kpis").innerHTML = kp.map(k => `<div class="kpi"><b>${k[0]}</b><span>${k[1]}</span><small>${k[2]}</small></div>`).join("");
+  $("ndocs").textContent = ov.documents;
+  $("dropped").textContent = `${D.generated} questions were generated; ${D.generated - ov.questions - D.audit.answered_by_document} were dropped because their quote could not be found, and ${D.audit.answered_by_document} "unanswerable" questions were dropped after an audit showed the document does answer them.`;
+
+  $("docTable").innerHTML = `<thead><tr><th>Document</th><th>Format</th><th>Language</th><th>Structure found</th><th class="n">Sections</th><th class="n">Questions</th></tr></thead><tbody>` +
+    D.docs.map(d => `<tr><td>${esc(d.name)}</td><td>${esc(d.format)}</td><td>${esc(d.language)}</td><td>${esc(d.structure)}</td><td class="n">${d.sections}</td><td class="n">${d.questions}</td></tr>`).join("") + "</tbody>";
+
+  const order = ["fact", "number", "multi", "cross_lang", "overview", "unanswerable"].filter(t => bt[t]);
+  hbars($("chType"), order.map(t => ({label: TYPE_NAMES[t] + ` (${bt[t].ours.n})`, vals: [
+    {v: bt[t].ours.accuracy, color: O, tip: `Document Cortex: ${bt[t].ours.correct} correct, ${bt[t].ours.partial} partial, ${bt[t].ours.incorrect} incorrect of ${bt[t].ours.n}`},
+    {v: bt[t].base.accuracy, color: B, tip: `Plain RAG: ${bt[t].base.correct} correct, ${bt[t].base.partial} partial, ${bt[t].base.incorrect} incorrect of ${bt[t].base.n}`}]})), {labelW: 230});
+
+  const rt = ["fact", "number", "multi", "cross_lang"].filter(t => bt[t] && bt[t].ret_ours.n);
+  hbars($("chRet"), rt.map(t => ({label: TYPE_NAMES[t], vals: [
+    {v: bt[t].ret_ours.evidence_any, color: O, tip: `Document Cortex: evidence found for ${pct(bt[t].ret_ours.evidence_any)} (all evidence: ${pct(bt[t].ret_ours.evidence_all)})`},
+    {v: bt[t].ret_base.evidence_any, color: B, tip: `Plain RAG: ${pct(bt[t].ret_base.evidence_any)} (all evidence: ${pct(bt[t].ret_base.evidence_all)})`}]})), {labelW: 160});
+
+  const bl = D.summary.by_language;
+  const langs = Object.keys(bl).sort((a, b) => bl[b].ours.n - bl[a].ours.n);
+  hbars($("chLang"), langs.map(l => ({label: `${l} (${bl[l].ours.n})`, vals: [
+    {v: bl[l].ours.accuracy, color: O, tip: `Document Cortex: ${bl[l].ours.correct}/${bl[l].ours.n} correct`},
+    {v: bl[l].base.accuracy, color: B, tip: `Plain RAG: ${bl[l].base.correct}/${bl[l].base.n} correct`}]})), {labelW: 130});
+
+  const bd = D.summary.by_doc, names = Object.fromEntries(D.docs.map(d => [d.slug, d.short]));
+  const ds = Object.keys(bd).sort((a, b) => bd[b].ours.accuracy - bd[a].ours.accuracy);
+  hbars($("chDoc"), ds.map(s => ({label: `${names[s] || s}`, vals: [
+    {v: bd[s].ours.accuracy, color: O, tip: `${esc(names[s] || s)} — Document Cortex: ${bd[s].ours.correct}/${bd[s].ours.n} correct`},
+    {v: bd[s].base.accuracy, color: B, tip: `${esc(names[s] || s)} — plain RAG: ${bd[s].base.correct}/${bd[s].base.n} correct`}]})), {labelW: 210, barH: 10, rowGap: 10});
+
+  const parts = [{label: "Supported", n: ck.supported, color: "var(--good)"}, {label: "Re-cited to the right source", n: ck.recited, color: "var(--ours)"},
+    {label: "Partly supported (flagged)", n: ck.partial, color: "var(--warn)"}, {label: "Not found in sources (flagged)", n: ck.unsupported, color: "var(--bad)"}];
+  stack($("chCheck"), parts, checked);
+  $("ckLegend").innerHTML = parts.map(p => `<span><i style="background:${p.color}"></i>${p.label}: ${p.n}</span>`).join("");
+  $("ckCap").textContent = `${checked} cited sentences in ${ov.questions} answers; ${ck.uncited} sentences had no citation (mostly "the documents do not say" lines).`;
+
+  const lv = ["clean", "light", "medium", "heavy"], rowsO = [];
+  Object.entries(D.ocr).forEach(([lang, r]) => lv.forEach(l => r[l] && rowsO.push({label: `${lang} · ${l}`, vals: [
+    {v: r[l].cer, color: B, tip: `Tesseract: ${(r[l].cer * 100).toFixed(1)}% characters wrong (confidence ${r[l].conf})`},
+    {v: r[l].cer_auto ?? r[l].cer, color: O, tip: `Pipeline: ${((r[l].cer_auto ?? r[l].cer) * 100).toFixed(1)}%` + (r[l].sec_auto ? ` (vision model, ${r[l].sec_auto}s)` : " (Tesseract was confident, kept)")}]})));
+  hbars($("chOcr"), rowsO, {labelW: 130, fmt: v => (v * 100).toFixed(v < 0.1 && v > 0 ? 1 : 0) + "%"});
+
+  hbars($("chCards"), [["gpt-oss-120b", .61], ["qwen3.8-27b", .58], ["gpt-oss-20b", .52], ["no cards", .39]].map(([l, v]) =>
+    ({label: l, vals: [{v, color: l === "gpt-oss-120b" ? O : "var(--ink-3)", tip: `${l}: hit@1 ${v}`}]})), {labelW: 120, fmt: v => v.toFixed(2), barH: 16});
+  hbars($("chSearch"), [["hybrid (ours)", .67], ["keywords only (BM25)", .62], ["vectors only", .59]].map(([l, v]) =>
+    ({label: l, vals: [{v, color: l.startsWith("hybrid") ? O : "var(--ink-3)", tip: `${l}: MRR ${v}`}]})), {labelW: 150, fmt: v => v.toFixed(2), barH: 16});
+
+  const r = (o, k) => o[k] !== undefined ? o[k] : "–";
+  $("sumTable").innerHTML = `<thead><tr><th>Measure</th><th class="n">Document Cortex</th><th class="n">Plain RAG</th></tr></thead><tbody>` + [
+    ["Fully correct", pct(ov.ours.accuracy), pct(ov.base.accuracy)],
+    ["Score (partial = ½)", pct(ov.ours.score), pct(ov.base.score)],
+    ["Incorrect", `${ov.ours.incorrect} of ${ov.ours.n}`, `${ov.base.incorrect} of ${ov.base.n}`],
+    ["Evidence found (any gold quote in sources)", pct(ov.ret_ours.evidence_any), pct(ov.ret_base.evidence_any)],
+    ["All evidence found (both quotes for two-section questions)", pct(ov.ret_ours.evidence_all), pct(ov.ret_base.evidence_all)],
+    ["Right document among the sources", pct(ov.ret_ours.right_doc), pct(ov.ret_base.right_doc)],
+    ["Evidence in the first source (hit@1)", pct(ov.ret_ours["hit@1"]), pct(ov.ret_base["hit@1"])],
+    ["Paired comparison", `${D.sig.ours_only} questions only we got right`, `${D.sig.base_only} only plain RAG got right`],
+    ["Gain in accuracy, 95% bootstrap interval", `+${(D.sig.diff_ci95[0]*100).toFixed(1)} to +${(D.sig.diff_ci95[1]*100).toFixed(1)} points`, `McNemar p = ${D.sig.mcnemar_p}`],
+    ["Median answer time", ov.latency.answer_median + " s", D.base_latency + " s"],
+    ["90th-percentile answer time", ov.latency.answer_p90 + " s", "–"],
+  ].map(x => `<tr><td>${x[0]}</td><td class="n">${x[1]}</td><td class="n">${x[2]}</td></tr>`).join("") + "</tbody>";
+
+  $("examples").innerHTML = D.examples.map(e => `<div class="qa"><div class="eyebrow">${esc(TYPE_NAMES[e.type] || e.type)} · ${esc(e.doc)}</div>
+    <div class="q">${esc(e.question)}</div><div class="meta-line">Gold: ${esc(e.gold)}</div>
+    <div><span class="pill ${e.g_ours}">ours: ${e.g_ours}</span> <span class="pill ${e.g_base}">plain RAG: ${e.g_base}</span></div>
+    <div class="a">${esc(e.ours)}</div></div>`).join("");
+  $("limits").innerHTML = D.limits.map(l => `<p>${l}</p>`).join("");
+  $("foot").innerHTML = `Document Cortex · <a href="https://github.com/Pradhumn115/document-cortex">github.com/Pradhumn115/document-cortex</a> · raw data in <code>bench/</code> (questions, answers, grades, spot-check sheet).`;
+}
+if (D) render();
+</script>

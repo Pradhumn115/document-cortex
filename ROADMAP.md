@@ -46,3 +46,17 @@ Compared against the [architecture doc](https://claude.ai/artifact/XxoW4vc2PWxUP
 - Table extraction as structured data (rows/columns), figure captions.
 - Auto-generated evaluation questions per document.
 - Full agentic navigator (multi-step tool use over the tree) for multi-hop questions.
+
+## Independent benchmark (v1, 2026-11-13)
+
+272 questions over 15 documents (`bench/`, `cortex/evalset.py`). Document Cortex 86.4% correct vs
+81.2% for plain RAG (p = 0.034). What it found:
+
+- Fixed: library-wide overview questions used the first six documents instead of the one named
+  (overview accuracy 27% → 67%).
+- Open: two-section questions (73% vs 86% for plain RAG) and unanswerable questions (77% vs 85%):
+  the answer model sometimes fills gaps from general knowledge. Ideas: stricter refusal prompt,
+  drop sentences the citation check marks "not found".
+- Open: Tesseract is over-confident on blurred Hindi (confidence 79, 13% character error), so the
+  page never escalates to the vision model. Escalate Indic pages on a lower bar or on a second signal.
+- To do: a person audits `bench/spotcheck_v1.md` to measure how often the grader is wrong.

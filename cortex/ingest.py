@@ -59,6 +59,8 @@ def _parts(tree: Tree, parent: Node, blocks: list[tuple[str, dict]], prefix: str
 
 
 _NUM_HEADING = re.compile(r"^\s*((\d+(\.\d+){0,3})[.)]?|chapter\s+\d+|section\s+\d+|[IVX]+\.)\s+\S.{0,80}$", re.I)
+# "CHAPTER I." / "Chapter 12" / "BOOK II" / "PART III", optionally followed by a title on the same line
+_CHAPTER = re.compile(r"^\s*(chapter|book|part|canto|adhyaya|अध्याय)\s+([0-9]+|[IVXLC]+)\b\.?(\s+\S.{0,80})?\s*$", re.I)
 
 
 # ----------------------------------------------------------------------- PDF
@@ -281,6 +283,27 @@ def _text(path: Path) -> Tree:
         parse_markdown(text, tree, tree.root, "m")
         return tree
     lines = text.splitlines()
+    chapters = [i for i, l in enumerate(lines) if _CHAPTER.match(l)]
+    if len(chapters) >= 2:
+        out, skip = [], set()
+        for i, l in enumerate(lines):
+            if i in skip:
+                continue
+            if i in chapters:
+                title = l.strip()
+                if not _CHAPTER.match(l).group(3):  # title on the next non-empty short line
+                    j = next((k for k in range(i + 1, min(i + 4, len(lines))) if lines[k].strip()), None)
+                    if j is not None and len(lines[j].strip()) <= 70 and j not in chapters:
+                        title += " " + lines[j].strip()
+                        skip.add(j)
+                out.append("# " + title)
+            else:
+                out.append(l)
+        parse_markdown("\n".join(out), tree, tree.root, "m")
+        dropped = _drop_toc_entries(tree)
+        tree.root.meta["structure"] = (f"chapter headings: {len(chapters)}"
+                                       + (f" ({dropped} table-of-contents entries removed)" if dropped else ""))
+        return tree
     numbered = sum(1 for l in lines if _NUM_HEADING.match(l) and len(l) < 90)
     if numbered >= 2:
         def depth(l: str) -> int:  # "2.1.1 Foo" -> 3; "Chapter 2" / "IV." -> 1
@@ -297,6 +320,25 @@ def _text(path: Path) -> Tree:
 
 
 _FRONT = re.compile(r"^(?:#\s*)?([A-Za-z][\w -]{0,30}):\s*(.+)$")
+
+
+def _drop_toc_entries(tree: Tree) -> int:
+    """A table of contents repeats the headings with no text under them. Remove empty
+    top-level sections whose title appears again later as a section with text."""
+    tops = tree.root.children
+    key = lambda t: re.sub(r"\W+", " ", t.lower()).strip()
+    later_with_text = {}
+    for i, c in enumerate(tops):
+        n = tree.nodes[c]
+        if n.text.strip() or n.children:
+            later_with_text.setdefault(key(n.title), i)
+    drop = [c for i, c in enumerate(tops)
+            if not tree.nodes[c].text.strip() and not tree.nodes[c].children
+            and later_with_text.get(key(tree.nodes[c].title), -1) > i]
+    for c in drop:
+        tree.root.children.remove(c)
+        del tree.nodes[c]
+    return len(drop)
 
 
 def _strip_front_matter(text: str, tree: Tree) -> str:
