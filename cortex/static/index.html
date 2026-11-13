@@ -5,119 +5,211 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Document Cortex</title>
 <style>
-/* Layout: library sidebar | conversation | source drawer. Index-card motif for sources. */
+/* Layout: sidebar (projects, chats) | main (chat or library) | panel (source, outline, process).
+   Phone: sidebar becomes a drawer, panel a full-screen sheet. Index-card motif for sources. */
 :root{
-  --bg:#f3f5f4; --panel:#ffffff; --ink:#15201d; --muted:#5b6964; --line:#d9e0dd; --soft:#e8eeeb;
+  --bg:#f3f5f4; --panel:#ffffff; --raise:#ffffff; --ink:#15201d; --muted:#5b6964; --faint:#8a9792; --line:#d9e0dd; --soft:#e8eeeb; --hover:#eef3f1;
   --accent:#0f6b5c; --accent-ink:#ffffff; --accent-soft:#dcefe9;
   --cite:#8a5a00; --cite-soft:#fbefd2; --warn:#a33a2a; --warn-soft:#fbe3df; --ok:#226b3a; --ok-soft:#e0f1e5;
-  --card:#fbfbf8; --rule:#cfe0ea;
+  --card:#fbfbf8; --shadow:0 10px 30px rgba(16,32,28,.14); --scrim:rgba(10,20,17,.35);
   --serif:"Charter","Iowan Old Style","Source Serif Pro","Noto Serif","Noto Serif Devanagari",Georgia,serif;
   --sans:system-ui,-apple-system,"Segoe UI","Noto Sans","Noto Sans Devanagari",Roboto,sans-serif;
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
 }
-@media (prefers-color-scheme: dark){:root{
-  --bg:#0e1412; --panel:#151d1a; --ink:#e3ece8; --muted:#97a7a1; --line:#28342f; --soft:#1c2622;
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1412; --panel:#131b18; --raise:#1a2420; --ink:#e3ece8; --muted:#97a7a1; --faint:#6f7f79; --line:#28342f; --soft:#1c2622; --hover:#1a2420;
   --accent:#4fc2a6; --accent-ink:#06201a; --accent-soft:#17312a;
   --cite:#f0c060; --cite-soft:#33280f; --warn:#f08a78; --warn-soft:#3a1d18; --ok:#7bd193; --ok-soft:#17301f;
-  --card:#18211e; --rule:#24384a; color-scheme:dark;}}
+  --card:#18211e; --shadow:0 12px 34px rgba(0,0,0,.5); --scrim:rgba(0,0,0,.55); color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0e1412; --panel:#131b18; --raise:#1a2420; --ink:#e3ece8; --muted:#97a7a1; --faint:#6f7f79; --line:#28342f; --soft:#1c2622; --hover:#1a2420;
+  --accent:#4fc2a6; --accent-ink:#06201a; --accent-soft:#17312a;
+  --cite:#f0c060; --cite-soft:#33280f; --warn:#f08a78; --warn-soft:#3a1d18; --ok:#7bd193; --ok-soft:#17301f;
+  --card:#18211e; --shadow:0 12px 34px rgba(0,0,0,.5); --scrim:rgba(0,0,0,.55); color-scheme:dark;}
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--sans)}
-button{font:inherit;color:inherit;cursor:pointer}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.app{display:grid;grid-template-columns:300px minmax(0,1fr);height:100%}
-.app.drawer-open{grid-template-columns:300px minmax(0,1fr) 440px}
+[hidden]{display:none!important}
+.app{display:grid;grid-template-columns:272px minmax(0,1fr);height:100%}
+.app.panel-open{grid-template-columns:272px minmax(0,1fr) 420px}
 
-/* sidebar */
-aside.lib{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
-.brand{padding:18px 18px 10px;display:flex;align-items:baseline;gap:8px}
-.brand h1{font:600 19px/1.1 var(--serif);margin:0;letter-spacing:.01em}
-.brand small{color:var(--muted);font-size:12px}
-.drop{margin:6px 14px 10px;border:1.5px dashed var(--line);border-radius:10px;padding:14px;text-align:center;color:var(--muted);font-size:13px;background:var(--soft)}
-.drop b{color:var(--ink)}
-.drop.over{border-color:var(--accent);background:var(--accent-soft);color:var(--ink)}
-.drop input{display:none}
-.lib-head{display:flex;justify-content:space-between;align-items:center;padding:4px 18px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
-.lib-head button{background:none;border:0;color:var(--accent);font-size:12px;text-transform:none;letter-spacing:0;padding:2px 4px}
-.docs{list-style:none;margin:0;padding:4px 8px 12px;overflow:auto;flex:1}
-.doc{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:8px;align-items:start;padding:9px 10px;border-radius:8px}
-.doc:hover{background:var(--soft)}
-.doc input{margin-top:3px;accent-color:var(--accent)}
-.doc .name{font-weight:550;font-size:14px;overflow-wrap:anywhere}
-.doc .sub{color:var(--muted);font-size:12px;display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
-.pill{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--soft);color:var(--muted);white-space:nowrap}
-.pill.ready{background:var(--ok-soft);color:var(--ok)} .pill.processing,.pill.queued{background:var(--accent-soft);color:var(--accent)}
-.pill.error{background:var(--warn-soft);color:var(--warn)} .pill.partial{background:var(--cite-soft);color:var(--cite)}
-.bar{height:4px;background:var(--soft);border-radius:4px;margin-top:6px;overflow:hidden}
-.bar i{display:block;height:100%;background:var(--accent);transition:width .4s}
-.doc .msg{font-size:12px;color:var(--muted);margin-top:3px;overflow-wrap:anywhere}
-.doc .acts{display:flex;gap:2px;opacity:0;transition:opacity .15s}
-.doc:hover .acts,.doc:focus-within .acts{opacity:1}
-.icon{background:none;border:0;border-radius:6px;padding:3px 6px;color:var(--muted);font-size:13px}
-.icon:hover{background:var(--line);color:var(--ink)}
-.foot{border-top:1px solid var(--line);padding:10px 16px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
-.foot button{align-self:flex-start;background:none;border:1px solid var(--line);border-radius:6px;padding:3px 9px;font-size:12px}
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--raise);border-radius:9px;padding:6px 12px;font-size:13.5px;font-weight:550;white-space:nowrap}
+.btn:hover{border-color:var(--faint)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.danger{color:var(--warn);border-color:var(--warn-soft)}
+.btn.danger.solid{background:var(--warn);border-color:var(--warn);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.ib{display:inline-grid;place-items:center;width:30px;height:30px;border:0;background:none;border-radius:8px;color:var(--muted);flex:none}
+.ib:hover{background:var(--soft);color:var(--ink)}
+.ib svg,.btn svg,.nav svg{width:16px;height:16px;flex:none}
+kbd{font:11px var(--mono);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;color:var(--muted);background:var(--panel)}
 
-/* main */
-main{display:flex;flex-direction:column;min-width:0;min-height:0}
-.scope{padding:14px 28px;border-bottom:1px solid var(--line);color:var(--muted);font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--bg)}
-.scope b{color:var(--ink);font-weight:550}
-.thread{flex:1;overflow:auto;padding:24px 28px 12px}
-.inner{max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
-.empty{max-width:560px;margin:8vh auto 0;text-align:center;color:var(--muted)}
-.empty h2{font:500 26px/1.25 var(--serif);color:var(--ink);margin:0 0 8px;text-wrap:balance}
-.suggest{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:18px}
-.suggest button{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:13px;text-align:left}
+/* ---------- sidebar ---------- */
+.rail{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;padding-top:env(safe-area-inset-top,0px)}
+.brand{display:flex;align-items:center;gap:9px;padding:14px 12px 10px 16px}
+.logo{width:28px;height:28px;border-radius:8px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
+.logo svg{width:16px;height:16px}
+.brand h1{font:600 17px/1.1 var(--serif);margin:0;flex:1;letter-spacing:.01em}
+.rail-close{display:none}
+.newchat{margin:2px 12px 8px;justify-content:space-between}
+.newchat span{display:flex;gap:7px;align-items:center}
+.search{margin:0 12px 8px;position:relative}
+.search input{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:6px 10px 6px 30px;font-size:13.5px;outline:0}
+.search input:focus{border-color:var(--accent)}
+.search svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--faint)}
+.rail-scroll{flex:1;overflow:auto;padding:0 8px 10px;min-height:0}
+.sec{display:flex;align-items:center;justify-content:space-between;padding:12px 8px 4px;color:var(--faint);font-size:11.5px;font-weight:650;text-transform:uppercase;letter-spacing:.07em}
+.sec .ib{width:24px;height:24px}
+.nav{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;text-align:left;padding:6px 8px;border-radius:8px;font-size:14px;color:var(--ink);position:relative;min-height:32px}
+.nav:hover{background:var(--hover)}
+.nav.on{background:var(--accent-soft);color:var(--ink);font-weight:550}
+.nav .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav .c{color:var(--faint);font-size:12px;font-variant-numeric:tabular-nums}
+.nav .dot{width:9px;height:9px;border-radius:3px;flex:none}
+.nav .more{opacity:0;width:24px;height:24px}
+.nav:hover .more,.nav:focus-within .more,.nav.on .more{opacity:1}
+.grp{padding:10px 8px 2px;color:var(--faint);font-size:12px}
+.none{padding:6px 8px;color:var(--faint);font-size:13px}
+.rail-foot{border-top:1px solid var(--line);padding:8px;display:flex;gap:4px;padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
+.rail-foot .nav{flex:1;justify-content:flex-start}
+
+/* ---------- main ---------- */
+main{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg)}
+.top{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--line);min-height:54px;padding-top:max(10px,env(safe-area-inset-top,0px))}
+.menu-btn{display:none}
+.title{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.title h2{margin:0;font:600 15.5px/1.3 var(--sans);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.title input{flex:1;min-width:0;font:600 15.5px var(--sans);border:1px solid var(--accent);border-radius:7px;padding:3px 8px;background:var(--raise);outline:0}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--raise);border-radius:999px;padding:4px 10px 4px 9px;font-size:13px;max-width:280px;color:var(--muted)}
+.chip b{color:var(--ink);font-weight:550;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip:hover{border-color:var(--faint)}
+.chip svg{width:14px;height:14px;flex:none}
+.banner{background:var(--cite-soft);color:var(--cite);padding:8px 16px;font-size:13px;border-bottom:1px solid var(--line)}
+.banner code{font:12px var(--mono)}
+
+.view{flex:1;display:flex;flex-direction:column;min-height:0}
+.thread{flex:1;overflow:auto;padding:24px 24px 12px;overscroll-behavior:contain}
+.inner{max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:26px}
+.empty{max-width:600px;margin:7vh auto 0;text-align:center;color:var(--muted);display:grid;gap:12px;justify-items:center}
+.empty h2{font:500 27px/1.25 var(--serif);color:var(--ink);margin:0;text-wrap:balance}
+.empty p{margin:0;max-width:52ch}
+.suggest{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px;width:100%}
+.suggest button{background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:10px 13px;font-size:13.5px;text-align:left;color:var(--ink);display:grid;gap:2px}
+.suggest button small{color:var(--faint);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .suggest button:hover{border-color:var(--accent)}
-.q{align-self:flex-end;max-width:85%;background:var(--accent);color:var(--accent-ink);padding:10px 15px;border-radius:14px 14px 4px 14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg{display:flex;flex-direction:column;gap:12px}
+.q{align-self:flex-end;max-width:85%;background:var(--accent);color:var(--accent-ink);padding:10px 15px;border-radius:16px 16px 4px 16px;white-space:pre-wrap;overflow-wrap:anywhere}
+.readas{align-self:flex-end;font-size:12px;color:var(--faint);margin-top:-6px}
 .a{display:flex;flex-direction:column;gap:12px}
-.a .body{font:16.5px/1.65 var(--serif);overflow-wrap:anywhere}
+.a .body{font:16.5px/1.68 var(--serif);overflow-wrap:anywhere}
 .a .body p{margin:.5em 0} .a .body ul,.a .body ol{margin:.4em 0;padding-left:1.4em} .a .body li{margin:.2em 0}
-.a .body h3,.a .body h4{font:600 16px var(--sans);margin:1em 0 .3em}
+.a .body h4{font:600 15.5px var(--sans);margin:1em 0 .3em}
 .a .body code{font:13px var(--mono);background:var(--soft);padding:1px 5px;border-radius:4px}
 .a .body pre{font:13px/1.5 var(--mono);background:var(--soft);padding:12px;border-radius:8px;overflow:auto}
 .a .body table{border-collapse:collapse;font:14px var(--sans);display:block;overflow:auto}
-.a .body td,.a .body th{border:1px solid var(--line);padding:4px 8px}
+.a .body td{border:1px solid var(--line);padding:4px 8px}
 .cite{font:600 11px var(--sans);background:var(--cite-soft);color:var(--cite);border:0;border-radius:5px;padding:1px 5px;margin:0 1px;vertical-align:2px}
-.cite:hover{filter:brightness(.95);text-decoration:underline}
-.flag{font:600 12px var(--sans);color:var(--warn);background:var(--warn-soft);border-radius:5px;padding:1px 6px;white-space:nowrap}
-.meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted)}
+.cite:hover{text-decoration:underline}
+.flag{font:600 12px var(--sans);color:var(--warn);background:var(--warn-soft);border-radius:5px;padding:1px 6px;white-space:nowrap;display:inline-flex;gap:4px;align-items:center}
+.flag svg,.check svg{width:13px;height:13px;flex:none}
+.meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted)}
 .check{display:inline-flex;gap:6px;align-items:center;border-radius:999px;padding:3px 10px;background:var(--ok-soft);color:var(--ok);font-weight:550}
 .check.warn{background:var(--cite-soft);color:var(--cite)} .check.bad{background:var(--warn-soft);color:var(--warn)}
 .route{border:1px solid var(--line);border-radius:999px;padding:2px 9px}
-.fb{margin-left:auto;display:flex;gap:4px}
-.fb button{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:2px 9px}
-.fb button.on{border-color:var(--accent);background:var(--accent-soft)}
-.sources{display:grid;gap:6px}
-.src{display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.acts{margin-left:auto;display:flex;gap:2px}
+.acts .ib{width:28px;height:28px}
+.acts .ib.on{background:var(--accent-soft);color:var(--accent)}
+.sources{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px}
+.src{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:7px 9px;align-items:start}
 .src:hover{border-color:var(--accent)}
-.src .n{font:600 12px var(--sans);color:var(--cite);background:var(--cite-soft);border-radius:5px;height:20px;display:grid;place-items:center}
-.src .p{font-size:13px;overflow-wrap:anywhere} .src .p small{color:var(--muted);display:block}
+.src .n{font:600 11.5px var(--sans);color:var(--cite);background:var(--cite-soft);border-radius:5px;height:20px;display:grid;place-items:center}
+.src .p{font-size:12.5px;line-height:1.4;overflow-wrap:anywhere;min-width:0}
+.src .p .sl{font-weight:550;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.src .p small{color:var(--faint);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .src.flash{animation:flash 1s}
 @keyframes flash{from{background:var(--cite-soft)}}
-.thinking{color:var(--muted);font-style:italic;display:flex;gap:8px;align-items:center}
+.err{color:var(--warn);background:var(--warn-soft);padding:10px 12px;border-radius:9px;font-size:14px}
+.note{color:var(--muted);font-size:13px;font-style:italic}
+.proc{border:1px solid var(--line);border-radius:10px;background:var(--panel);font:13px/1.45 var(--sans)}
+.proc>summary{list-style:none;cursor:pointer;padding:7px 12px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.proc>summary::-webkit-details-marker{display:none}
+.proc>summary .chev{width:14px;height:14px;transition:transform .15s;transform:rotate(-90deg)}
+.proc[open]>summary .chev{transform:none}
+.proc>summary b{color:var(--ink);font-weight:550}
+.steps{list-style:none;margin:0;padding:2px 12px 10px 14px;display:flex;flex-direction:column;gap:7px}
+.st{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:8px;align-items:start}
+.st .ic{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;margin-top:0;background:var(--ok-soft);color:var(--ok)}
+.st .ic svg{width:11px;height:11px}
+.st.run .ic{background:none;border:2px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.st .tt{overflow-wrap:anywhere} .st .dd{color:var(--muted);margin-top:1px;overflow-wrap:anywhere}
+.st ul{margin:3px 0 0;padding-left:14px;color:var(--muted);font-size:12.5px} .st li{margin:1px 0;overflow-wrap:anywhere}
+.st .ms{color:var(--faint);font:11.5px var(--mono);white-space:nowrap}
+.st.k-check .ic{background:var(--cite-soft);color:var(--cite)} .st.k-route .ic,.st.k-followup .ic,.st.k-decompose .ic{background:var(--accent-soft);color:var(--accent)}
 .dots::after{content:"…";animation:dots 1.2s steps(3) infinite;display:inline-block;width:1.2em;overflow:hidden;vertical-align:bottom}
 @keyframes dots{from{width:0}to{width:1.2em}}
-.err{color:var(--warn);background:var(--warn-soft);padding:10px 12px;border-radius:8px;font-size:14px}
-.composer{padding:14px 28px 18px;border-top:1px solid var(--line);background:var(--bg)}
-.box{max-width:780px;margin:0 auto;display:flex;gap:10px;align-items:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 8px 8px 14px}
-.box:focus-within{border-color:var(--accent)}
-.box textarea{flex:1;border:0;outline:0;resize:none;background:transparent;color:var(--ink);font:15px/1.5 var(--sans);max-height:200px;padding:6px 0}
-.send{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:8px 16px;font-weight:600}
-.send:disabled{opacity:.5;cursor:default}
-.opts{max-width:780px;margin:6px auto 0;display:flex;gap:14px;font-size:12px;color:var(--muted)}
-.opts label{display:flex;gap:5px;align-items:center}
 
-/* drawer */
-aside.drawer{display:none;background:var(--panel);border-left:1px solid var(--line);min-height:0;flex-direction:column}
-.drawer-open aside.drawer{display:flex}
-.dhead{display:flex;align-items:center;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.composer{padding:10px 24px 14px;padding-bottom:max(14px,env(safe-area-inset-bottom,0px))}
+.box{max-width:780px;margin:0 auto;display:flex;gap:6px;align-items:flex-end;background:var(--raise);border:1px solid var(--line);border-radius:16px;padding:6px 6px 6px 6px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.box:focus-within{border-color:var(--accent)}
+.box textarea{flex:1;border:0;outline:0;resize:none;background:transparent;font:15px/1.5 var(--sans);max-height:200px;padding:6px 4px;min-width:0}
+.send{background:var(--accent);color:var(--accent-ink);border:0;border-radius:11px;padding:7px 16px;font-weight:600;flex:none}
+.send.stop{background:var(--ink);color:var(--bg)}
+.send:disabled{opacity:.45;cursor:default}
+.opts{max-width:780px;margin:6px auto 0;display:flex;gap:14px;font-size:12px;color:var(--faint);flex-wrap:wrap;align-items:center}
+.opts label{display:flex;gap:5px;align-items:center;color:var(--muted)}
+.opts input{accent-color:var(--accent)}
+.opts .hint{margin-left:auto}
+
+/* ---------- library view ---------- */
+.lib{flex:1;overflow:auto;padding:20px 24px 40px}
+.lib-wrap{max-width:1040px;margin:0 auto;display:grid;gap:16px}
+.lib-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lib-head h2{margin:0;font:600 22px var(--serif);flex:1;min-width:160px}
+.lib-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.lib-tools .search{margin:0;flex:1;min-width:200px}
+.lib-tools select{border:1px solid var(--line);background:var(--raise);border-radius:9px;padding:6px 8px;font-size:13.5px}
+.folders{display:flex;gap:6px;flex-wrap:wrap}
+.folders button{border:1px solid var(--line);background:var(--raise);border-radius:999px;padding:4px 11px;font-size:13px;color:var(--muted)}
+.folders button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);font-weight:550}
+.drop{border:1.5px dashed var(--line);border-radius:12px;padding:16px;text-align:center;color:var(--muted);font-size:13.5px;background:var(--panel);cursor:pointer}
+.drop b{color:var(--ink)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft);color:var(--ink)}
+.bulk{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--accent-soft);border-radius:10px;padding:8px 12px;font-size:13.5px}
+.bulk b{margin-right:auto}
+.dtable{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+.drow{display:grid;grid-template-columns:28px minmax(0,1fr) 150px 110px 34px;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}
+.drow:first-child{border-top:0}
+.drow.head{background:var(--soft);font-size:11.5px;font-weight:650;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;padding:7px 12px}
+.drow input{accent-color:var(--accent);width:16px;height:16px}
+.dname{font-weight:550;font-size:14px;overflow-wrap:anywhere;border:0;background:none;text-align:left;padding:0}
+.dname:hover{text-decoration:underline}
+.dsub{color:var(--faint);font-size:12px;display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.dfolder{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;gap:5px;align-items:center}
+.dfolder svg{width:13px;height:13px;flex:none}
+.pill{font-size:11.5px;padding:1px 8px;border-radius:999px;background:var(--soft);color:var(--muted);white-space:nowrap;font-weight:550}
+.pill.ready{background:var(--ok-soft);color:var(--ok)} .pill.processing,.pill.queued{background:var(--accent-soft);color:var(--accent)}
+.pill.error{background:var(--warn-soft);color:var(--warn)} .pill.partial{background:var(--cite-soft);color:var(--cite)}
+.bar{height:4px;background:var(--soft);border-radius:4px;margin-top:6px;overflow:hidden;max-width:320px}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .4s}
+.dmsg{font-size:12px;color:var(--muted);margin-top:3px;overflow-wrap:anywhere}
+
+/* ---------- panel ---------- */
+.panel{display:none;background:var(--panel);border-left:1px solid var(--line);min-height:0;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+.panel-open .panel{display:flex}
+.phead{display:flex;align-items:center;gap:6px;padding:9px 10px;border-bottom:1px solid var(--line)}
 .tabs{display:flex;gap:2px;flex:1}
-.tabs button{background:none;border:0;border-radius:6px;padding:5px 10px;font-size:13px;color:var(--muted)}
+.tabs button{background:none;border:0;border-radius:7px;padding:5px 10px;font-size:13px;color:var(--muted)}
 .tabs button.on{background:var(--soft);color:var(--ink);font-weight:550}
-.dbody{overflow:auto;padding:16px 18px 30px;flex:1}
+.pbody{overflow:auto;padding:16px 18px 30px;flex:1}
 .path{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
-.dtitle{font:600 18px/1.3 var(--serif);margin:4px 0 2px;overflow-wrap:anywhere}
+.ptitle{font:600 18px/1.3 var(--serif);margin:4px 0 2px;overflow-wrap:anywhere}
 .cardbox{margin:12px 0;background:var(--card);border:1px solid var(--line);border-top:3px solid #c4555a;border-radius:4px;padding:10px 12px;font-size:13px}
 .cardbox b{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .cardbox ul{margin:4px 0;padding-left:1.2em}
@@ -126,331 +218,826 @@ aside.drawer{display:none;background:var(--panel);border-left:1px solid var(--li
 .tree ul{list-style:none;padding-left:16px;margin:0;border-left:1px solid var(--line)}
 .tree button{background:none;border:0;padding:3px 6px;border-radius:5px;text-align:left;width:100%;display:flex;justify-content:space-between;gap:8px}
 .tree button:hover{background:var(--soft)}
-.tree small{color:var(--muted);white-space:nowrap}
-.proc{border:1px solid var(--line);border-radius:10px;background:var(--panel);font:13px/1.45 var(--sans)}
-.proc>summary{list-style:none;cursor:pointer;padding:8px 12px;color:var(--muted);display:flex;gap:8px;align-items:center}
-.proc>summary::-webkit-details-marker{display:none}
-.proc>summary::before{content:"▸";font-size:11px;transition:transform .15s}
-.proc[open]>summary::before{transform:rotate(90deg)}
-.proc>summary b{color:var(--ink);font-weight:550}
-.steps{list-style:none;margin:0;padding:2px 12px 10px 14px;display:flex;flex-direction:column;gap:7px}
-.st{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:8px;align-items:start}
-.st .ic{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:10px;margin-top:1px;background:var(--ok-soft);color:var(--ok)}
-.st.run .ic{background:none;border:2px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.st .tt{color:var(--ink);overflow-wrap:anywhere} .st .dd{color:var(--muted);margin-top:1px;overflow-wrap:anywhere}
-.st ul{margin:3px 0 0;padding-left:14px;color:var(--muted);font-size:12.5px} .st li{margin:1px 0;overflow-wrap:anywhere}
-.st .ms{color:var(--muted);font:11.5px var(--mono);white-space:nowrap}
-.st.k-check .ic{background:var(--cite-soft);color:var(--cite)} .st.k-route .ic{background:var(--accent-soft);color:var(--accent)}
+.tree small{color:var(--faint);white-space:nowrap}
 .tl{list-style:none;margin:10px 0;padding:0;border-left:2px solid var(--line)}
 .tl li{position:relative;padding:4px 0 8px 14px;font-size:13.5px;overflow-wrap:anywhere}
 .tl li::before{content:"";position:absolute;left:-6px;top:9px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
-.tl li:last-child.live::before{animation:pulse 1s infinite}
+.tl li.live::before{animation:pulse 1s infinite}
 @keyframes pulse{50%{opacity:.3}}
-.tl small{color:var(--muted);font:11.5px var(--mono);margin-right:6px}
-.banner{background:var(--cite-soft);color:var(--cite);padding:8px 14px;font-size:13px;border-bottom:1px solid var(--line)}
-@media (max-width:1100px){.app.drawer-open{grid-template-columns:260px minmax(0,1fr)} .drawer-open aside.drawer{position:fixed;inset:0 0 0 auto;width:min(440px,100vw);z-index:5;box-shadow:-8px 0 30px rgba(0,0,0,.18)}}
-@media (max-width:760px){.app,.app.drawer-open{grid-template-columns:1fr} aside.lib{max-height:38vh;border-right:0;border-bottom:1px solid var(--line)} .thread,.composer,.scope{padding-left:14px;padding-right:14px}}
+.tl small{color:var(--faint);font:11.5px var(--mono);margin-right:6px}
+
+/* ---------- menus, dialogs, toasts ---------- */
+.pop{position:fixed;z-index:40;min-width:200px;max-width:min(300px,calc(100vw - 16px));background:var(--raise);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow);padding:5px}
+.pop button{display:flex;width:100%;gap:9px;align-items:center;border:0;background:none;text-align:left;padding:7px 10px;border-radius:7px;font-size:13.5px}
+.pop button:hover,.pop button:focus-visible{background:var(--soft)}
+.pop button.danger{color:var(--warn)}
+.pop hr{border:0;border-top:1px solid var(--line);margin:4px 2px}
+.pop svg{width:15px;height:15px;color:var(--muted)}
+.pop button.danger svg{color:var(--warn)}
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:30}
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--raise);color:var(--ink);padding:0;width:min(520px,calc(100vw - 24px));max-height:min(86vh,760px);box-shadow:var(--shadow)}
+dialog::backdrop{background:var(--scrim)}
+dialog[open]{display:flex;flex-direction:column}
+.dlg-h{display:flex;align-items:center;gap:8px;padding:16px 18px 8px}
+.dlg-h h3{margin:0;font:600 17px var(--sans);flex:1}
+.dlg-b{padding:4px 18px 12px;overflow:auto;display:grid;gap:12px;font-size:14px}
+.dlg-f{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
+.field{display:grid;gap:5px}
+.field label,.lbl{font-size:12.5px;font-weight:600;color:var(--muted)}
+.field input[type=text]{border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:8px 10px;outline:0}
+.field input[type=text]:focus{border-color:var(--accent)}
+.checks{border:1px solid var(--line);border-radius:10px;max-height:300px;overflow:auto;background:var(--bg)}
+.checks .fh{padding:7px 12px 3px;font-size:11.5px;color:var(--faint);font-weight:650;text-transform:uppercase;letter-spacing:.06em}
+.checks label{display:flex;gap:9px;align-items:center;padding:6px 12px;font-size:13.5px;cursor:pointer}
+.checks label:hover{background:var(--soft)}
+.checks label.dis{opacity:.5;cursor:default}
+.checks input{accent-color:var(--accent);flex:none}
+.checks span{flex:1;min-width:0;overflow-wrap:anywhere}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;padding:2px;background:var(--bg)}
+.seg button{border:0;background:none;border-radius:7px;padding:4px 12px;font-size:13px;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
+.seg svg{width:14px;height:14px}
+.seg button.on{background:var(--raise);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:13px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;overflow-wrap:anywhere}
+.kv code{font:12px var(--mono)}
+.ok{color:var(--ok);font-weight:600} .no{color:var(--warn);font-weight:600}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom,0px));z-index:50;background:var(--ink);color:var(--bg);border-radius:11px;padding:9px 10px 9px 14px;display:flex;gap:12px;align-items:center;font-size:13.5px;box-shadow:var(--shadow);max-width:calc(100vw - 24px)}
+.toast button{border:0;background:none;color:var(--accent-soft);font-weight:650;padding:3px 6px;border-radius:6px}
+:root[data-theme="dark"] .toast button{color:var(--accent-ink)}
+
+/* ---------- responsive ---------- */
+@media (max-width:1100px){
+  .app.panel-open{grid-template-columns:272px minmax(0,1fr)}
+  .panel-open .panel{position:fixed;inset:0 0 0 auto;width:min(440px,100vw);z-index:35;box-shadow:var(--shadow)}
+}
+@media (max-width:767px){
+  .app,.app.panel-open{grid-template-columns:minmax(0,1fr)}
+  .rail{position:fixed;inset:0 auto 0 0;width:min(300px,86vw);z-index:36;transform:translateX(-102%);transition:transform .2s ease;box-shadow:var(--shadow)}
+  .rail.open{transform:none}
+  .rail-close{display:inline-grid}
+  .newchat kbd{display:none}
+  .menu-btn{display:inline-grid}
+  .top{padding-left:8px;padding-right:8px;gap:4px;flex-wrap:wrap}
+  .title{order:0}
+  .chip{order:2;max-width:100%;flex-basis:100%;justify-content:flex-start;margin:2px 4px 0}
+  .thread{padding:16px 14px 8px}
+  .composer{padding:8px 10px 10px}
+  .opts .hint{display:none}
+  .suggest{grid-template-columns:minmax(0,1fr)}
+  .q{max-width:92%}
+  .panel-open .panel{width:100vw}
+  .lib{padding:14px 12px 30px}
+  .drow{grid-template-columns:24px minmax(0,1fr) 34px;row-gap:4px}
+  .drow .dfolder,.drow .dstat{grid-column:2}
+  .drow .nof{display:none}
+  .drow.head{display:none}
+  .sources{grid-template-columns:minmax(0,1fr)}
+}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
+<!-- Icons: Lucide v0.460.0 (https://lucide.dev, ISC licence), embedded so the app works offline -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-book-open-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-book-open-text" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 7v14" /> <path d="M16 12h2" /> <path d="M16 8h2" /> <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" /> <path d="M6 12h2" /> <path d="M6 8h2" /></symbol>
+  <symbol id="i-books" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-library" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m16 6 4 14" /> <path d="M12 6v14" /> <path d="M8 8v12" /> <path d="M4 4v16" /></symbol>
+  <symbol id="i-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-chevron-down" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m6 9 6 6 6-6" /></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-message-square" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-check" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M20 6 9 17l-5-5" /></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-chevron-down" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m6 9 6 6 6-6" /></symbol>
+  <symbol id="i-circle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-circle-check" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="m9 12 2 2 4-4" /></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-paperclip" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" /></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-copy" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="14" height="14" x="8" y="8" rx="2" ry="2" /> <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></symbol>
+  <symbol id="i-crosshair" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-crosshair" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <line x1="22" x2="18" y1="12" y2="12" /> <line x1="6" x2="2" y1="12" y2="12" /> <line x1="12" x2="12" y1="6" y2="2" /> <line x1="12" x2="12" y1="22" y2="18" /></symbol>
+  <symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-database" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <ellipse cx="12" cy="5" rx="9" ry="3" /> <path d="M3 5V19A9 3 0 0 0 21 19V5" /> <path d="M3 12A9 3 0 0 0 21 12" /></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-file-text" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M10 9H8" /> <path d="M16 13H8" /> <path d="M16 17H8" /></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-ellipsis" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="1" /> <circle cx="19" cy="12" r="1" /> <circle cx="5" cy="12" r="1" /></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-thumbs-down" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M17 14V2" /> <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" /></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-download" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <polyline points="7 10 12 15 17 10" /> <line x1="12" x2="12" y1="15" y2="3" /></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-pencil" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /> <path d="m15 5 4 4" /></symbol>
+  <symbol id="i-ellipsis" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-ellipsis" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="1" /> <circle cx="19" cy="12" r="1" /> <circle cx="5" cy="12" r="1" /></symbol>
+  <symbol id="i-eraser" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-eraser" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21" /> <path d="M22 21H7" /> <path d="m5 11 9 9" /></symbol>
+  <symbol id="i-export" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-download" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <polyline points="7 10 12 15 17 10" /> <line x1="12" x2="12" y1="15" y2="3" /></symbol>
+  <symbol id="i-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-file-text" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M10 9H8" /> <path d="M16 13H8" /> <path d="M16 17H8" /></symbol>
+  <symbol id="i-files" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-files" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M20 7h-3a2 2 0 0 1-2-2V2" /> <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z" /> <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8" /></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-folder" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></symbol>
+  <symbol id="i-folder-kanban" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-folder-kanban" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" /> <path d="M8 10v4" /> <path d="M12 10v2" /> <path d="M16 10v6" /></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-settings" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /> <circle cx="12" cy="12" r="3" /></symbol>
+  <symbol id="i-key-round" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-key-round" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z" /> <circle cx="16.5" cy="7.5" r=".5" fill="currentColor" /></symbol>
+  <symbol id="i-library" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-library" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m16 6 4 14" /> <path d="M12 6v14" /> <path d="M8 8v12" /> <path d="M4 4v16" /></symbol>
+  <symbol id="i-list-checks" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-list-checks" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m3 17 2 2 4-4" /> <path d="m3 7 2 2 4-4" /> <path d="M13 6h8" /> <path d="M13 12h8" /> <path d="M13 18h8" /></symbol>
+  <symbol id="i-list-ordered" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-list-ordered" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10 12h11" /> <path d="M10 18h11" /> <path d="M10 6h11" /> <path d="M4 10h2" /> <path d="M4 6h1v4" /> <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" /></symbol>
+  <symbol id="i-list-tree" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-list-tree" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 12h-8" /> <path d="M21 6H8" /> <path d="M21 18h-8" /> <path d="M3 6v4c0 1.1.9 2 2 2h3" /> <path d="M3 10v6c0 1.1.9 2 2 2h3" /></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-menu" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <line x1="4" x2="20" y1="12" y2="12" /> <line x1="4" x2="20" y1="6" y2="6" /> <line x1="4" x2="20" y1="18" y2="18" /></symbol>
+  <symbol id="i-message-square" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-message-square" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></symbol>
+  <symbol id="i-message-square-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-message-square-plus" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> <path d="M12 7v6" /> <path d="M9 10h6" /></symbol>
+  <symbol id="i-messages-square" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-messages-square" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z" /> <path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1" /></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-monitor" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="20" height="14" x="2" y="3" rx="2" /> <line x1="8" x2="16" y1="21" y2="21" /> <line x1="12" x2="12" y1="17" y2="21" /></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></symbol>
+  <symbol id="i-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-list-tree" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 12h-8" /> <path d="M21 6H8" /> <path d="M21 18h-8" /> <path d="M3 6v4c0 1.1.9 2 2 2h3" /> <path d="M3 10v6c0 1.1.9 2 2 2h3" /></symbol>
+  <symbol id="i-paperclip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-paperclip" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" /></symbol>
+  <symbol id="i-pen-line" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-pen-line" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 20h9" /> <path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z" /></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-pencil" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /> <path d="m15 5 4 4" /></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-pin" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 17v5" /> <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" /></symbol>
+  <symbol id="i-pin-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-pin-off" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 17v5" /> <path d="M15 9.34V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H7.89" /> <path d="m2 2 20 20" /> <path d="M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h11" /></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-plus" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12h14" /> <path d="M12 5v14" /></symbol>
+  <symbol id="i-project" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-folder-kanban" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" /> <path d="M8 10v4" /> <path d="M12 10v2" /> <path d="M16 10v6" /></symbol>
+  <symbol id="i-retry" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-rotate-ccw" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /> <path d="M3 3v5h5" /></symbol>
+  <symbol id="i-rotate-ccw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-rotate-ccw" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /> <path d="M3 3v5h5" /></symbol>
+  <symbol id="i-scope" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-files" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M20 7h-3a2 2 0 0 1-2-2V2" /> <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z" /> <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8" /></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-search" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="11" cy="11" r="8" /> <path d="m21 21-4.3-4.3" /></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-settings" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /> <circle cx="12" cy="12" r="3" /></symbol>
+  <symbol id="i-shield-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-shield-check" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" /></symbol>
+  <symbol id="i-signpost" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-signpost" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 13v8" /> <path d="M12 3v3" /> <path d="M18 6a2 2 0 0 1 1.387.56l2.307 2.22a1 1 0 0 1 0 1.44l-2.307 2.22A2 2 0 0 1 18 13H6a2 2 0 0 1-1.387-.56l-2.306-2.22a1 1 0 0 1 0-1.44l2.306-2.22A2 2 0 0 1 6 6z" /></symbol>
+  <symbol id="i-split" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-split" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M16 3h5v5" /> <path d="M8 3H3v5" /> <path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3" /> <path d="m15 9 6-6" /></symbol>
+  <symbol id="i-steps" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-list-checks" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m3 17 2 2 4-4" /> <path d="m3 7 2 2 4-4" /> <path d="M13 6h8" /> <path d="M13 12h8" /> <path d="M13 18h8" /></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="4" /> <path d="M12 2v2" /> <path d="M12 20v2" /> <path d="m4.93 4.93 1.41 1.41" /> <path d="m17.66 17.66 1.41 1.41" /> <path d="M2 12h2" /> <path d="M20 12h2" /> <path d="m6.34 17.66-1.41 1.41" /> <path d="m19.07 4.93-1.41 1.41" /></symbol>
+  <symbol id="i-tags" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-tags" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19" /> <path d="M9.586 5.586A2 2 0 0 0 8.172 5H3a1 1 0 0 0-1 1v5.172a2 2 0 0 0 .586 1.414L8.29 18.29a2.426 2.426 0 0 0 3.42 0l3.58-3.58a2.426 2.426 0 0 0 0-3.42z" /> <circle cx="6.5" cy="9.5" r=".5" fill="currentColor" /></symbol>
+  <symbol id="i-thumbs-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-thumbs-down" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M17 14V2" /> <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" /></symbol>
+  <symbol id="i-thumbs-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-thumbs-up" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M7 10v12" /> <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" /></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-trash-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 6h18" /> <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /> <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /> <line x1="10" x2="10" y1="11" y2="17" /> <line x1="14" x2="14" y1="11" y2="17" /></symbol>
+  <symbol id="i-trash-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-trash-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 6h18" /> <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /> <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /> <line x1="10" x2="10" y1="11" y2="17" /> <line x1="14" x2="14" y1="11" y2="17" /></symbol>
+  <symbol id="i-triangle-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-triangle-alert" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-thumbs-up" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M7 10v12" /> <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" /></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-upload" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <polyline points="17 8 12 3 7 8" /> <line x1="12" x2="12" y1="3" y2="15" /></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg class="lucide lucide-x" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M18 6 6 18" /> <path d="m6 6 12 12" /></symbol>
+</svg>
+
 <div class="app" id="app">
-  <aside class="lib">
-    <div class="brand"><h1>Document Cortex</h1><small id="ver"></small></div>
-    <label class="drop" id="drop" tabindex="0">
-      <input type="file" id="file" multiple accept=".pdf,.docx,.md,.markdown,.txt,.rst,.png,.jpg,.jpeg,.tif,.tiff,.webp,.bmp">
-      <b>Add documents</b><br>Drop files here or click. PDF (scanned too), DOCX, Markdown, text, images.
-    </label>
-    <div class="lib-head"><span>Library</span><button id="selAll" type="button">Ask all</button></div>
-    <ul class="docs" id="docs"></ul>
-    <div class="foot">
-      <span id="home"></span>
-      <button id="learn" type="button" title="Add questions you rated 👍 to the cards that answered them">Learn from 👍 answers</button>
+  <aside class="rail" id="rail" aria-label="Projects and chats">
+    <div class="brand"><span class="logo" aria-hidden="true"><svg><use href="#i-book-open-text"/></svg></span><h1>Document Cortex</h1>
+      <button class="ib rail-close" id="railClose" type="button" aria-label="Close sidebar"><svg><use href="#i-x"/></svg></button></div>
+    <button class="btn newchat" id="newChat" type="button"><span><svg><use href="#i-message-square-plus"/></svg>New chat</span><kbd>⇧⌘O</kbd></button>
+    <div class="search"><svg><use href="#i-search"/></svg><input id="chatSearch" type="search" placeholder="Search chats" aria-label="Search chats"></div>
+    <div class="rail-scroll">
+      <div class="sec"><span>Projects</span><button class="ib" id="addProject" type="button" title="New project" aria-label="New project"><svg><use href="#i-plus"/></svg></button></div>
+      <div id="projects"></div>
+      <div class="sec"><span id="chatsLabel">Chats</span></div>
+      <div id="chats"></div>
+    </div>
+    <div class="rail-foot">
+      <button class="nav" id="goLibrary" type="button"><svg><use href="#i-books"/></svg><span class="t">Library</span><span class="c" id="docCount"></span></button>
+      <button class="nav" id="goSettings" type="button" style="flex:none;width:auto" aria-label="Settings" title="Settings"><svg><use href="#i-gear"/></svg></button>
     </div>
   </aside>
 
   <main>
-    <div id="keyBanner" class="banner" hidden>No Groq API key found. Put GROQ_API_KEY=… in ~/.cortex/.env and restart.</div>
-    <div class="scope" id="scope"></div>
-    <div class="thread" id="thread"><div class="inner" id="inner"></div></div>
-    <div class="composer">
-      <form class="box" id="form">
-        <textarea id="q" rows="1" placeholder="Ask anything about your documents…" aria-label="Question"></textarea>
-        <button class="send" id="send" type="submit">Ask</button>
-      </form>
-      <div class="opts"><label><input type="checkbox" id="verify" checked> Check citations</label><span>Enter to ask · Shift+Enter for a new line</span></div>
-    </div>
+    <header class="top">
+      <button class="ib menu-btn" id="openRail" type="button" aria-label="Open sidebar"><svg><use href="#i-menu"/></svg></button>
+      <div class="title" id="title"><h2 id="titleText">New chat</h2></div>
+      <button class="chip" id="scopeChip" type="button" title="Choose which documents this chat searches"><svg><use href="#i-scope"/></svg><span>Searching</span><b id="scopeText">all documents</b><svg><use href="#i-caret"/></svg></button>
+      <button class="ib" id="chatMenu" type="button" aria-label="Chat options"><svg><use href="#i-dots"/></svg></button>
+    </header>
+    <div id="keyBanner" class="banner" hidden>No Groq API key found. Put <code>GROQ_API_KEY=…</code> in <code>~/.cortex/.env</code> and restart <code>cortex serve</code>. A free key: console.groq.com/keys</div>
+
+    <section class="view" id="chatView">
+      <div class="thread" id="thread"><div class="inner" id="inner"></div></div>
+      <div class="composer">
+        <form class="box" id="form">
+          <button class="ib" id="attach" type="button" title="Add documents" aria-label="Add documents"><svg><use href="#i-clip"/></svg></button>
+          <textarea id="q" rows="1" placeholder="Ask anything about your documents…" aria-label="Question"></textarea>
+          <button class="send" id="send" type="submit">Ask</button>
+        </form>
+        <div class="opts"><label><input type="checkbox" id="verify" checked> Check citations</label><span id="scopeHint"></span><span class="hint">Enter to ask · Shift+Enter new line</span></div>
+      </div>
+    </section>
+
+    <section class="view" id="libView" hidden>
+      <div class="lib"><div class="lib-wrap">
+        <div class="lib-head"><h2 id="libCount">Documents</h2>
+          <button class="btn primary" id="uploadBtn" type="button"><svg><use href="#i-upload"/></svg>Add documents</button></div>
+        <label class="drop" id="drop" tabindex="0"><b>Drop files here</b> or click to choose · PDF (scanned too), Word, Markdown, text, images · any language</label>
+        <div class="lib-tools">
+          <div class="search"><svg><use href="#i-search"/></svg><input id="docSearch" type="search" placeholder="Search documents" aria-label="Search documents"></div>
+          <select id="statusFilter" aria-label="Filter by status"><option value="">Any status</option><option value="ready">Ready</option><option value="processing">Processing</option><option value="error">Failed</option></select>
+        </div>
+        <div class="folders" id="folders"></div>
+        <div class="bulk" id="bulk" hidden></div>
+        <div class="dtable" id="dtable"></div>
+      </div></div>
+    </section>
   </main>
 
-  <aside class="drawer" id="drawer">
-    <div class="dhead">
+  <aside class="panel" id="panel" aria-label="Source panel">
+    <div class="phead">
       <div class="tabs"><button id="tabSrc" class="on" type="button">Source</button><button id="tabOut" type="button">Outline</button><button id="tabProc" type="button">Process</button></div>
-      <button class="icon" id="close" type="button" aria-label="Close panel">✕</button>
+      <button class="ib" id="closePanel" type="button" aria-label="Close panel"><svg><use href="#i-x"/></svg></button>
     </div>
-    <div class="dbody" id="dbody"></div>
+    <div class="pbody" id="pbody"></div>
   </aside>
 </div>
+<input type="file" id="file" multiple hidden accept=".pdf,.docx,.md,.markdown,.txt,.rst,.png,.jpg,.jpeg,.tif,.tiff,.webp,.bmp">
+<div class="scrim" id="scrim" hidden></div>
+<div class="pop" id="pop" hidden role="menu"></div>
+<dialog id="dlg"><div class="dlg-h"><h3 id="dlgTitle"></h3><button class="ib" type="button" data-close aria-label="Close"><svg><use href="#i-x"/></svg></button></div><div class="dlg-b" id="dlgBody"></div><div class="dlg-f" id="dlgFoot"></div></dialog>
+<div class="toast" id="toast" hidden role="status"></div>
 
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let docs = [], selected = new Set(), lastSrc = null, outlineDoc = null, busy = false;
-try { selected = new Set(JSON.parse(localStorage.getItem("cortex.sel") || "[]")); } catch {}
-const saveSel = () => { try { localStorage.setItem("cortex.sel", JSON.stringify([...selected])); } catch {} };
+const icon = n => `<svg><use href="#i-${n}"/></svg>`;
+const store = {get(k, d) { try { const v = localStorage.getItem("cortex." + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+               set(k, v) { try { localStorage.setItem("cortex." + k, JSON.stringify(v)); } catch {} }};
+const S = {docs: [], projects: [], chats: [], project: store.get("project", ""), chat: null, draftDocs: null,
+           view: "chat", busy: false, abort: null, status: null, folder: "", libSel: new Set(), outlineDoc: null, procDoc: null, lastSrc: null};
+const COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#6250d6", "#e34948", "#008300"];
 
 async function api(path, opts = {}) {
+  if (opts.json !== undefined) { opts.body = JSON.stringify(opts.json); opts.headers = {"Content-Type": "application/json"}; delete opts.json; }
   const r = await fetch(path, opts);
   if (!r.ok) { let m = r.statusText; try { m = (await r.json()).detail || m; } catch {} throw new Error(m); }
   return r.json();
 }
 
-/* ---------- library ---------- */
+/* ---------- theme ---------- */
+function applyTheme() { const t = store.get("theme", "system"); if (t === "system") document.documentElement.removeAttribute("data-theme"); else document.documentElement.dataset.theme = t; }
+applyTheme();
+$("#verify").checked = store.get("verify", true);
+
+/* ---------- helpers ---------- */
 const pages = p => !p ? "" : (p[0] === p[1] ? `p. ${p[0]}` : `p. ${p[0]}–${p[1]}`);
-function renderDocs() {
-  const ul = $("#docs");
-  if (!docs.length) { ul.innerHTML = `<li class="doc" style="grid-template-columns:1fr;color:var(--muted);font-size:13px">No documents yet.</li>`; renderScope(); return; }
-  ul.innerHTML = docs.map(d => {
-    const st = d.status || "queued", ready = st === "ready" || st === "partial";
-    const ocr = d.ocr ? `<span class="pill" title="${esc(d.ocr.engine)}">OCR ${d.ocr.pages}p</span>` : "";
-    const prog = (st === "processing" || st === "queued") ? `<div class="bar"><i style="width:${Math.round((d.progress||0)*100)}%"></i></div><div class="msg">${esc(d.message||"")}</div>` : "";
-    const err = st === "error" ? `<div class="msg" style="color:var(--warn)">${esc(d.message)}</div>` : (st === "partial" ? `<div class="msg">${esc(d.message)}</div>` : "");
-    return `<li class="doc">
-      <input type="checkbox" ${ready ? "" : "disabled"} ${selected.has(d.slug) ? "checked" : ""} data-sel="${esc(d.slug)}" aria-label="Include ${esc(d.name)}">
-      <div><div class="name">${esc(d.name || d.slug)}</div>
-        <div class="sub"><span class="pill ${st}">${st}</span>${d.cards ? `<span>${d.cards} sections</span>` : ""}${ocr}</div>${prog}${err}</div>
-      <div class="acts"><button class="icon" data-proc="${esc(d.slug)}" title="How this document was processed" aria-label="Processing steps">⚙︎</button>${ready ? `<button class="icon" data-out="${esc(d.slug)}" title="Outline" aria-label="Outline">☰</button>` : ""}<button class="icon" data-del="${esc(d.slug)}" title="Remove" aria-label="Remove">🗑</button></div>
-    </li>`;
-  }).join("");
-  renderScope();
+const ready = () => S.docs.filter(d => d.status === "ready" || d.status === "partial");
+const docName = d => d.title || d.name || d.slug;
+const docBy = slug => S.docs.find(d => d.slug === slug);
+const proj = id => S.projects.find(p => p.id === id);
+const projColor = p => COLORS[Math.abs([...p.id].reduce((a, c) => a * 31 + c.charCodeAt(0), 7)) % COLORS.length];
+function scopeSlugs() {
+  const r = new Set(ready().map(d => d.slug));
+  const explicit = S.chat ? S.chat.docs : S.draftDocs;
+  if (explicit && explicit.length) return explicit.filter(s => r.has(s));
+  const p = proj(S.chat ? S.chat.project : S.project);
+  if (p) return p.docs.filter(s => r.has(s));
+  return [...r];
 }
-function readyDocs() { return docs.filter(d => d.status === "ready" || d.status === "partial"); }
-function scopeDocs() { const r = readyDocs(); const s = r.filter(d => selected.has(d.slug)); return s.length ? s : r; }
-function renderScope() {
-  const r = readyDocs(), s = scopeDocs();
-  $("#scope").innerHTML = !r.length ? "Add a document to start." :
-    (s.length === r.length ? `Asking <b>all ${r.length} document${r.length > 1 ? "s" : ""}</b>` :
-     `Asking <b>${s.map(d => esc(d.name)).join("</b>, <b>")}</b>`) + ` <span>· tick documents in the library to narrow it</span>`;
-  if (!$("#inner").children.length || $("#inner").querySelector(".empty")) renderEmpty();
+function scopeLabel() {
+  const s = scopeSlugs(), explicit = S.chat ? S.chat.docs : S.draftDocs, p = proj(S.chat ? S.chat.project : S.project);
+  if (explicit && explicit.length) return s.length === 1 ? docName(docBy(s[0]) || {slug: s[0]}) : `${s.length} chosen documents`;
+  if (p) return `${p.name} · ${s.length} doc${s.length === 1 ? "" : "s"}`;
+  return `all ${s.length} documents`;
 }
-function renderEmpty() {
-  const r = readyDocs();
-  const ex = r.slice(0, 3).flatMap(d => [`Summarize ${d.name}`]);
-  $("#inner").innerHTML = `<div class="empty">
-    <h2>${r.length ? "Ask anything about your documents" : "Put in a document, then ask anything about it"}</h2>
-    <p>${r.length ? "Answers cite the exact section and page, and every citation is checked against its source." :
-      "Drop a PDF, a scanned book, handwritten notes, a Word file or plain text on the left. It is read, organised into sections with index cards, and indexed."}</p>
-    ${ex.length ? `<div class="suggest">${ex.map(e => `<button type="button" data-ask="${esc(e)}">${esc(e)}</button>`).join("")}</div>` : ""}
-  </div>`;
+function toast(msg, undo, ms = 5000) {
+  const t = $("#toast"); clearTimeout(toast.t);
+  t.innerHTML = `<span>${esc(msg)}</span>${undo ? `<button type="button" id="undo">Undo</button>` : ""}`; t.hidden = false;
+  return new Promise(res => {
+    if (undo) $("#undo").onclick = () => { t.hidden = true; clearTimeout(toast.t); res(false); };
+    toast.t = setTimeout(() => { t.hidden = true; res(true); }, ms);
+  });
 }
-async function loadDocs() {
-  try { docs = await api("/api/docs"); } catch { return; }
-  const live = new Set(docs.map(d => d.slug)); selected = new Set([...selected].filter(s => live.has(s))); saveSel();
-  renderDocs();
-  if (procDoc && $("#app").classList.contains("drawer-open")) showProcess(procDoc);
-  clearTimeout(loadDocs.t);
-  loadDocs.t = setTimeout(loadDocs, docs.some(d => d.status === "processing" || d.status === "queued") ? 1500 : 8000);
+
+/* ---------- menus & dialogs ---------- */
+function menu(anchor, items) {
+  const pop = $("#pop");
+  pop.innerHTML = items.map((it, i) => it === "-" ? "<hr>" : `<button type="button" role="menuitem" data-i="${i}" class="${it.danger ? "danger" : ""}">${it.icon ? icon(it.icon) : ""}${esc(it.label)}</button>`).join("");
+  pop.hidden = false;
+  const r = anchor.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + "px";
+  pop.style.top = (r.bottom + h + 8 > innerHeight ? Math.max(8, r.top - h - 4) : r.bottom + 4) + "px";
+  pop.onclick = e => { const b = e.target.closest("[data-i]"); if (!b) return; closeMenu(); items[+b.dataset.i].action(); };
+  pop.querySelector("button")?.focus();
 }
-async function upload(files) {
-  if (!files.length) return;
-  const fd = new FormData(); [...files].forEach(f => fd.append("files", f));
-  try { await api("/api/docs", {method: "POST", body: fd}); } catch (e) { alertInline(e.message); }
-  loadDocs();
+function closeMenu() { $("#pop").hidden = true; }
+document.addEventListener("pointerdown", e => { if (!$("#pop").hidden && !e.target.closest("#pop")) closeMenu(); }, true);
+
+function dialog(title, body, buttons) {
+  const d = $("#dlg"); $("#dlgTitle").textContent = title; $("#dlgBody").innerHTML = body;
+  $("#dlgFoot").innerHTML = buttons.map((b, i) => `<button type="button" class="btn ${b.cls || ""}" data-b="${i}">${esc(b.label)}</button>`).join("");
+  $("#dlgFoot").onclick = async e => { const b = e.target.closest("[data-b]"); if (!b) return; const r = await buttons[+b.dataset.b].action?.(); if (r !== false) d.close(); };
+  d.showModal(); d.querySelector("input[type=text]")?.focus();
+  return d;
 }
-function alertInline(msg) { const d = document.createElement("div"); d.className = "err"; d.textContent = msg; $("#inner").appendChild(d); }
+$("#dlg").addEventListener("click", e => { if (e.target.closest("[data-close]") || e.target === $("#dlg")) $("#dlg").close(); });
+function confirmDlg(title, text, label, action) { dialog(title, `<p style="margin:0">${text}</p>`, [{label: "Cancel"}, {label, cls: "danger solid", action}]); }
+function promptDlg(title, label, value, action, hint = "") {
+  dialog(title, `<div class="field"><label for="pv">${esc(label)}</label><input type="text" id="pv" value="${esc(value)}">${hint ? `<span class="path">${hint}</span>` : ""}</div>`,
+    [{label: "Cancel"}, {label: "Save", cls: "primary", action: () => action($("#pv").value)}]);
+  $("#pv").select(); $("#pv").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); $("#dlgFoot [data-b='1']").click(); } };
+}
+function docChecklist(checked, {onlyReady = true} = {}) {
+  const groups = {};
+  S.docs.forEach(d => (groups[d.folder || ""] ||= []).push(d));
+  const keys = Object.keys(groups).sort((a, b) => (a === "") - (b === "") || a.localeCompare(b));
+  if (!S.docs.length) return `<p class="path">No documents yet. Add some in the Library.</p>`;
+  return `<div class="checks">${keys.map(k => `${keys.length > 1 ? `<div class="fh">${esc(k || "No folder")}</div>` : ""}` + groups[k].map(d => {
+    const ok = d.status === "ready" || d.status === "partial";
+    return `<label class="${ok || !onlyReady ? "" : "dis"}"><input type="checkbox" value="${esc(d.slug)}" ${checked.has(d.slug) ? "checked" : ""} ${ok || !onlyReady ? "" : "disabled"}><span>${esc(docName(d))}</span>${ok ? "" : `<span class="pill ${esc(d.status)}">${esc(d.status)}</span>`}</label>`;
+  }).join("")).join("")}</div>`;
+}
+const checkedIn = () => [...$("#dlgBody").querySelectorAll(".checks input:checked")].map(i => i.value);
+
+/* ---------- sidebar ---------- */
+function renderProjects() {
+  const all = `<button class="nav ${S.project === "" ? "on" : ""}" data-proj=""><span class="dot" style="background:var(--faint)"></span><span class="t">All documents</span><span class="c">${ready().length}</span></button>`;
+  $("#projects").innerHTML = all + S.projects.map(p => `<div class="nav ${S.project === p.id ? "on" : ""}" role="button" tabindex="0" data-proj="${p.id}">
+    <span class="dot" style="background:${projColor(p)}"></span><span class="t">${esc(p.name)}</span><span class="c">${p.docs.length}</span>
+    <button class="ib more" type="button" data-projmenu="${p.id}" aria-label="Project options"><svg><use href="#i-dots"/></svg></button></div>`).join("")
+    + (S.projects.length ? "" : `<div class="none">Group documents and their chats, e.g. one per course or case.</div>`);
+}
+function renderChats() {
+  const q = $("#chatSearch").value.trim().toLowerCase();
+  let list = S.chats.filter(c => (S.project === "" || c.project === S.project) && (!q || (c.title || "").toLowerCase().includes(q)));
+  $("#chatsLabel").textContent = S.project ? `Chats in ${proj(S.project)?.name || "project"}` : "All chats";
+  if (!list.length) { $("#chats").innerHTML = `<div class="none">${q ? "No chats match." : "No chats yet. Ask a question to start one."}</div>`; return; }
+  const now = Date.now(), day = 864e5, groups = {Pinned: [], Today: [], "Previous 7 days": [], Older: []};
+  list.forEach(c => { const age = now - new Date(c.updated).getTime();
+    (c.pinned ? groups.Pinned : age < day && new Date(c.updated).toDateString() === new Date().toDateString() ? groups.Today : age < 7 * day ? groups["Previous 7 days"] : groups.Older).push(c); });
+  $("#chats").innerHTML = Object.entries(groups).filter(([, v]) => v.length).map(([k, v]) => `<div class="grp">${k}</div>` + v.map(c =>
+    `<div class="nav ${S.chat?.id === c.id ? "on" : ""}" role="button" tabindex="0" data-chat="${c.id}"><span class="t">${esc(c.title || "Untitled chat")}</span>
+      <button class="ib more" type="button" data-chatmenu="${c.id}" aria-label="Chat options"><svg><use href="#i-dots"/></svg></button></div>`).join("")).join("");
+}
+async function loadSide() {
+  try { [S.projects, S.chats] = await Promise.all([api("/api/projects"), api("/api/chats")]); } catch { return; }
+  if (S.project && !proj(S.project)) S.project = "";
+  renderProjects(); renderChats();
+}
+function closeRail() { $("#rail").classList.remove("open"); $("#scrim").hidden = true; }
+
+/* ---------- header & scope ---------- */
+function renderHeader() {
+  $("#titleText").textContent = S.view === "library" ? "Library" : (S.chat?.title || "New chat");
+  $("#scopeChip").hidden = S.view === "library";
+  $("#chatMenu").hidden = S.view === "library" || !S.chat;
+  $("#scopeText").textContent = scopeLabel();
+  const n = scopeSlugs().length;
+  const pp = proj(S.chat ? S.chat.project : S.project), ex = S.chat ? S.chat.docs : S.draftDocs;
+  $("#q").placeholder = !n ? "Add a document to start…" : ex && ex.length === 1 ? `Ask about ${docName(docBy(ex[0]) || {slug: ex[0]})}…`
+    : pp && !(ex && ex.length) ? `Ask about ${pp.name}…` : "Ask a question…";
+  $("#scopeHint").textContent = "";
+}
+function openScope() {
+  const cur = new Set(scopeSlugs()), p = proj(S.chat ? S.chat.project : S.project);
+  dialog("Documents this chat searches", `<p class="path" style="margin:0">Answers come only from the ticked documents.</p>
+    <div class="lib-tools"><button class="btn" type="button" id="selAllD">Select all</button><button class="btn" type="button" id="selNoneD">Clear</button></div>${docChecklist(cur)}`,
+    [{label: p ? `Use ${p.name}` : "Use all documents", action: () => setScope(null)}, {label: "Apply", cls: "primary", action: () => setScope(checkedIn())}]);
+  $("#selAllD").onclick = () => $("#dlgBody").querySelectorAll(".checks input:not(:disabled)").forEach(i => i.checked = true);
+  $("#selNoneD").onclick = () => $("#dlgBody").querySelectorAll(".checks input").forEach(i => i.checked = false);
+}
+async function setScope(list) {
+  const all = ready().map(d => d.slug), p = proj(S.chat ? S.chat.project : S.project);
+  const base = p ? p.docs.filter(s => all.includes(s)) : all;
+  if (list && (!list.length || (list.length === base.length && list.every(s => base.includes(s))))) list = null;
+  if (S.chat) { S.chat.docs = list; await api(`/api/chats/${S.chat.id}`, {method: "PATCH", json: {docs: list || []}}).catch(() => {}); }
+  else S.draftDocs = list;
+  renderHeader(); if (!S.chat || !S.chat.messages.length) renderEmpty();
+}
+
+/* ---------- chats ---------- */
+function newChat(scope = null) {
+  if (S.abort) return;
+  const p = proj(S.project);  // documents outside the selected project: start the chat outside it
+  if (scope && p && !scope.every(d => p.docs.includes(d))) { S.project = ""; store.set("project", ""); renderProjects(); }
+  S.chat = null; S.draftDocs = scope; showView("chat"); location.hash = "";
+  renderHeader(); renderEmpty(); renderChats(); closeRail(); $("#q").focus();
+}
+async function openChat(id) {
+  try { S.chat = await api(`/api/chats/${id}`); } catch { toast("That chat no longer exists."); return newChat(); }
+  if (!Array.isArray(S.chat.docs) || !S.chat.docs.length) S.chat.docs = null;
+  if (S.chat.project && S.project && S.chat.project !== S.project) { S.project = S.chat.project; store.set("project", S.project); renderProjects(); }
+  showView("chat"); if (location.hash !== "#chat=" + id) history.replaceState(null, "", "#chat=" + id);
+  renderHeader(); renderThread(); renderChats(); closeRail();
+}
+function renderThread() {
+  const inner = $("#inner"); inner.innerHTML = "";
+  if (!S.chat || !S.chat.messages.length) return renderEmpty();
+  S.chat.messages.forEach((m, i) => inner.appendChild(renderMessage(m, i)));
+  requestAnimationFrame(() => { const t = $("#thread"); t.scrollTop = t.scrollHeight; });
+}
+async function renderEmpty() {
+  if (S.chat && S.chat.messages.length) return;
+  const r = ready(), slugs = scopeSlugs(), p = proj(S.chat ? S.chat.project : S.project);
+  const inner = $("#inner");
+  if (!S.docs.length) {
+    inner.innerHTML = `<div class="empty"><h2>Put in a document, then ask anything about it</h2>
+      <p>PDFs (scanned books too), handwritten notes, Word files, Markdown or plain text, in any language. Each is read, organised into sections with index cards, and indexed on this computer.</p>
+      <button class="btn primary" type="button" data-upload>${icon("upload")}Add documents</button></div>`; return;
+  }
+  inner.innerHTML = `<div class="empty"><h2>${p ? esc(p.name) : "Ask anything about your documents"}</h2>
+    <p>${slugs.length ? `Searching ${esc(scopeLabel())}. Answers cite the exact section and page, and every citation is checked against its source.`
+      : r.length ? "This project has no ready documents yet. Add some from the Library, or choose documents above." : "Your documents are still being read. Watch their progress in the Library."}</p>
+    <div class="suggest" id="sugg"></div></div>`;
+  if (!slugs.length) return;
+  try {
+    const sg = await api("/api/suggest?docs=" + encodeURIComponent(slugs.slice(0, 12).join(",")));
+    const el = $("#sugg"); if (!el) return;
+    el.innerHTML = sg.map(s => `<button type="button" data-ask="${esc(s.question)}">${esc(s.question)}<small>${esc(docName(docBy(s.doc) || {slug: s.doc}))}</small></button>`).join("");
+  } catch {}
+}
+function renderMessage(m, i) {
+  const w = document.createElement("div"); w.className = "msg"; w.dataset.i = i;
+  w.innerHTML = `<div class="q">${esc(m.question)}</div>${m.standalone ? `<div class="readas">Read as: ${esc(m.standalone)}</div>` : ""}`;
+  w.appendChild(renderAnswer(m.result, i));
+  return w;
+}
 
 /* ---------- markdown (escaped first, then a small safe subset) ---------- */
 function md(src, n) {
-  const blocks = String(src).split(/```/);
-  return blocks.map((b, i) => {
+  return String(src).split(/```/).map((b, i) => {
     if (i % 2) return `<pre>${esc(b.replace(/^\w*\n/, ""))}</pre>`;
     const lines = esc(b).split("\n"); let out = "", list = null;
     const close = () => { if (list) { out += `</${list}>`; list = null; } };
-    for (let l of lines) {
+    for (const l of lines) {
       let m;
       if ((m = l.match(/^\s*[-*•]\s+(.*)/))) { if (list !== "ul") { close(); out += "<ul>"; list = "ul"; } out += `<li>${inline(m[1], n)}</li>`; }
       else if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))) { if (list !== "ol") { close(); out += "<ol>"; list = "ol"; } out += `<li>${inline(m[1], n)}</li>`; }
       else if ((m = l.match(/^#{1,6}\s+(.*)/))) { close(); out += `<h4>${inline(m[1], n)}</h4>`; }
-      else if (/^\s*\|.*\|\s*$/.test(l)) { close(); if (!/^\s*\|[\s:-|]+\|\s*$/.test(l)) out += `<table><tr>${l.trim().slice(1, -1).split("|").map(c => `<td>${inline(c.trim(), n)}</td>`).join("")}</tr></table>`; }
-      else if (!l.trim()) { close(); }
+      else if (/^\s*\|.*\|\s*$/.test(l)) { close(); if (!/^\s*\|[\s:|-]+\|\s*$/.test(l)) out += `<table><tr>${l.trim().slice(1, -1).split("|").map(c => `<td>${inline(c.trim(), n)}</td>`).join("")}</tr></table>`; }
+      else if (!l.trim()) close();
       else { close(); out += `<p>${inline(l, n)}</p>`; }
     }
     close(); return out.replace(/<\/table><table>/g, "");
   }).join("");
 }
 function inline(s, n) {
-  return s.replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+  return s.replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/(^|\W)\*([^*\s][^*]*)\*(?=\W|$)/g, "$1<em>$2</em>")
-    .replace(/⚠ (not found in the sources|partly supported)/g, '<span class="flag">⚠ $1</span>')
+    .replace(/⚠ (not found in the sources|partly supported)/g, '<span class="flag"><svg><use href="#i-triangle-alert"/></svg>$1</span>')
     .replace(/\[(\d+)\]/g, (m, d) => (+d >= 1 && +d <= n) ? `<button class="cite" type="button" data-cite="${d}">${d}</button>` : m);
+}
+function stepHTML(st) {
+  const ic = st.running ? "" : icon({route: "signpost", followup: "messages-square", decompose: "split", check: "shield-check", answer: "pen-line", search: "search", rank: "list-ordered", sources: "file-text", entities: "tags", load: "database", quota: "key-round", select: "crosshair"}[st.kind] || "check");
+  const time = st.running ? "" : st.ms != null ? (st.ms >= 1000 ? (st.ms / 1000).toFixed(1) + "s" : st.ms + "ms") : (st.t != null ? st.t + "s" : "");
+  return `<li class="st k-${esc(st.kind)}${st.running ? " run" : ""}" data-kind="${esc(st.kind)}"><span class="ic">${ic}</span>
+    <div><div class="tt">${esc(st.title)}</div>${st.detail ? `<div class="dd">${esc(st.detail)}</div>` : ""}
+    ${(st.items || []).length ? `<ul>${st.items.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}</div><span class="ms">${time}</span></li>`;
+}
+function checkBadge(c) {
+  if (!c) return "";
+  if (c.error) return `<span class="check warn">${icon("triangle-alert")}Citation check unavailable</span>`;
+  const n = c.supported + c.partial + c.recited + c.unsupported;
+  if (!n) return `<span class="check warn">${icon("triangle-alert")}No cited claims to check</span>`;
+  const parts = [`${c.supported}/${n} supported`];
+  if (c.partial) parts.push(`${c.partial} partly`); if (c.recited) parts.push(`${c.recited} re-cited`); if (c.unsupported) parts.push(`${c.unsupported} not in sources`); if (c.unchecked) parts.push(`${c.unchecked} unchecked`);
+  return `<span class="check ${c.unsupported ? "bad" : c.partial + c.recited ? "warn" : ""}" title="Each cited sentence was checked against its source">${icon(c.unsupported || c.partial ? "triangle-alert" : "circle-check")}${parts.join(" · ")}</span>`;
+}
+function srcLabel(s, multi) {
+  const parts = s.path.split(" › "), last = parts.length > 1 ? parts[parts.length - 1] : (s.doc_name || parts[0]);
+  const parent = parts.slice(1, -1).join(" › "), where = [multi ? s.doc_name : "", parent].filter(Boolean).join(" › ");
+  return `<b class="sl">${esc(last)}</b><small>${esc(where || (parts.length > 1 ? "" : "whole document"))}${s.pages ? `${where ? " · " : ""}${pages(s.pages)}` : ""}</small>`;
+}
+function renderAnswer(res, i) {
+  const el = document.createElement("div"); el.className = "a"; el.dataset.id = res.id; el._res = res;
+  const multi = new Set(res.sources.map(s => s.doc)).size > 1, steps = res.trace || [];
+  const total = steps.reduce((a, s) => a + (s.ms || 0), 0);
+  el.innerHTML = `${steps.length ? `<details class="proc"><summary><svg class="chev"><use href="#i-caret"/></svg><b>Process</b> · ${steps.length} steps${total ? ` · ${(total / 1000).toFixed(1)}s` : ""}</summary><ol class="steps">${steps.map(stepHTML).join("")}</ol></details>` : ""}
+    <div class="body">${md(res.answer, res.sources.length)}</div>
+    <div class="meta">${checkBadge(res.check)}${res.route === "overview" ? `<span class="route">overview</span>` : ""}
+      <div class="acts">
+        <button class="ib" type="button" data-copy title="Copy answer" aria-label="Copy answer">${icon("copy")}</button>
+        ${i != null ? `<button class="ib" type="button" data-retry="${i}" title="Ask again" aria-label="Ask again">${icon("retry")}</button>` : ""}
+        <button class="ib ${res.feedback === 1 ? "on" : ""}" type="button" data-fb="1" title="Good answer" aria-label="Good answer">${icon("up")}</button>
+        <button class="ib ${res.feedback === -1 ? "on" : ""}" type="button" data-fb="-1" title="Bad answer" aria-label="Bad answer">${icon("down")}</button></div></div>
+    ${res.sources.length ? `<div class="sources">${res.sources.map((s, k) => `<button type="button" class="src" data-src="${k}"><span class="n">${k + 1}</span>
+      <span class="p">${srcLabel(s, multi)}</span></button>`).join("")}</div>` : ""}`;
+  return el;
 }
 
 /* ---------- asking ---------- */
-function addQ(text) { const d = document.createElement("div"); d.className = "q"; d.textContent = text; $("#inner").appendChild(d); }
-function scrollDown() { const t = $("#thread"); t.scrollTop = t.scrollHeight; }
-function stepHTML(st) {
-  const ic = st.running ? "" : ({route: "→", check: "✓", answer: "✎", search: "⌕", rank: "≡", sources: "❏", entities: "◆", load: "▤", quota: "↻"}[st.kind] || "✓");
-  return `<li class="st k-${esc(st.kind)}${st.running ? " run" : ""}" data-kind="${esc(st.kind)}">
-    <span class="ic">${ic}</span>
-    <div><div class="tt">${esc(st.title)}</div>${st.detail ? `<div class="dd">${esc(st.detail)}</div>` : ""}
-      ${(st.items || []).length ? `<ul>${st.items.map(i => `<li>${esc(i)}</li>`).join("")}</ul>` : ""}</div>
-    <span class="ms">${st.running ? "" : st.ms != null ? (st.ms >= 1000 ? (st.ms / 1000).toFixed(1) + "s" : st.ms + "ms") : st.t + "s"}</span></li>`;
-}
-async function ask(question) {
-  question = question.trim(); if (!question || busy) return;
-  if (!readyDocs().length) { alertInline("Add a document first, and wait until it shows “ready”."); return; }
-  if ($("#inner .empty")) $("#inner").innerHTML = "";
-  busy = true; $("#send").disabled = true;
-  addQ(question);
-  const wrap = document.createElement("div"); wrap.className = "a";
-  wrap.innerHTML = `<details class="proc" open><summary><b>Working</b><span class="dots"></span></summary><ol class="steps"></ol></details>`;
-  $("#inner").appendChild(wrap); scrollDown();
-  const list = wrap.querySelector(".steps"), t0 = performance.now();
-  let n = 0;
-  const addStep = st => {
-    const running = list.querySelector(`.st.run[data-kind="${CSS.escape(st.kind)}"]`);
-    const html = stepHTML(st);
-    if (running) running.outerHTML = html; else list.insertAdjacentHTML("beforeend", html);
-    if (!st.running) n++;
-    scrollDown();
-  };
+async function ask(question, replace = null) {
+  question = question.trim(); if (!question || S.busy) return;
+  const slugs = scopeSlugs();
+  if (!slugs.length) { toast(ready().length ? "No documents chosen for this chat. Pick some with the Searching button." : "Add a document first, and wait until it shows “ready”."); return; }
+  if (!S.chat || !S.chat.messages.length) $("#inner").innerHTML = "";
+  if (replace != null) $(`#inner .msg[data-i="${replace}"]`)?.remove();
+  S.busy = true; S.abort = new AbortController(); setSend();
+  const w = document.createElement("div"); w.className = "msg";
+  w.innerHTML = `<div class="q">${esc(question)}</div><div class="a"><details class="proc" open><summary><svg class="chev"><use href="#i-caret"/></svg><b>Working</b><span class="dots"></span></summary><ol class="steps"></ol></details></div>`;
+  $("#inner").appendChild(w); const t = $("#thread"); t.scrollTop = t.scrollHeight;
+  const list = w.querySelector(".steps");
+  const addStep = st => { const run = list.querySelector(`.st.run[data-kind="${CSS.escape(st.kind)}"]`); const h = stepHTML(st);
+    if (run) run.outerHTML = h; else list.insertAdjacentHTML("beforeend", h); if (t.scrollHeight - t.scrollTop - t.clientHeight < 200) t.scrollTop = t.scrollHeight; };
+  const all = ready().map(d => d.slug);
+  let chatId = S.chat?.id || null;
   try {
-    const sel = scopeDocs().map(d => d.slug);
-    const r = await fetch("/api/ask/stream", {method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({question, docs: sel.length === readyDocs().length ? null : sel, verify: $("#verify").checked})});
+    const r = await fetch("/api/ask/stream", {method: "POST", headers: {"Content-Type": "application/json"}, signal: S.abort.signal,
+      body: JSON.stringify({question, docs: slugs.length === all.length ? null : slugs, verify: $("#verify").checked,
+                            chat_id: chatId, project: S.chat ? null : S.project || null, replace,
+                            chat_docs: S.chat ? null : (S.draftDocs && S.draftDocs.length ? S.draftDocs : null)})});
     if (!r.ok) { let m = r.statusText; try { m = (await r.json()).detail || m; } catch {} throw new Error(m); }
     const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "", result = null;
     for (;;) {
       const {value, done} = await reader.read(); if (done) break;
-      buf += dec.decode(value, {stream: true});
-      let i; while ((i = buf.indexOf("\n")) >= 0) {
-        const line = buf.slice(0, i); buf = buf.slice(i + 1); if (!line.trim()) continue;
+      buf += dec.decode(value, {stream: true}); let k;
+      while ((k = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, k); buf = buf.slice(k + 1); if (!line.trim()) continue;
         const ev = JSON.parse(line);
-        if (ev.type === "step") addStep(ev);
+        if (ev.type === "chat") { chatId = ev.chat_id; if (!S.chat) { history.replaceState(null, "", "#chat=" + chatId); } }
+        else if (ev.type === "step") addStep(ev);
         else if (ev.type === "result") result = ev;
         else if (ev.type === "error") throw new Error(ev.message);
       }
     }
     if (!result) throw new Error("No answer came back.");
-    const secs = ((performance.now() - t0) / 1000).toFixed(1);
-    const ans = renderAnswer(result);
-    const proc = wrap.querySelector(".proc"); proc.open = false;
-    proc.querySelector("summary").innerHTML = `<b>Process</b> · ${n} steps · ${secs}s <span>— see exactly how this answer was found and checked</span>`;
-    ans.prepend(proc);
-    wrap.replaceWith(ans);
+    S.chat = await api(`/api/chats/${chatId}`); if (!S.chat.docs?.length) S.chat.docs = null;
+    renderThread(); renderHeader(); loadSide();
   } catch (e) {
-    const err = document.createElement("div"); err.className = "err"; err.textContent = e.message;
-    wrap.querySelector("summary").innerHTML = "<b>Process</b> · stopped"; wrap.appendChild(err);
+    const stopped = e.name === "AbortError";
+    w.querySelector("summary").innerHTML = `<svg class="chev"><use href="#i-caret"/></svg><b>Process</b> · ${stopped ? "stopped" : "failed"}`;
+    w.querySelector(".a").insertAdjacentHTML("beforeend", stopped ? `<p class="note">Stopped. The answer may still be saved to this chat when it finishes.</p>` : `<div class="err">${esc(e.message)}</div>`);
+    if (chatId && !S.chat) { try { S.chat = await api(`/api/chats/${chatId}`); } catch {} loadSide(); renderHeader(); }
   }
-  busy = false; $("#send").disabled = false; scrollDown();
+  S.busy = false; S.abort = null; setSend();
 }
-function checkBadge(c) {
-  if (!c) return "";
-  if (c.error) return `<span class="check warn">Citation check unavailable</span>`;
-  const n = c.supported + c.partial + c.recited + c.unsupported;
-  if (!n) return `<span class="check warn">No cited claims to check</span>`;
-  const bad = c.unsupported, warn = c.partial + c.recited;
-  const parts = [`${c.supported}/${n} supported`];
-  if (c.partial) parts.push(`${c.partial} partly`); if (c.recited) parts.push(`${c.recited} re-cited`); if (bad) parts.push(`${bad} not in sources`);
-  return `<span class="check ${bad ? "bad" : warn ? "warn" : ""}" title="Each cited sentence was checked against its source">✓ ${parts.join(" · ")}</span>`;
+function setSend() { const b = $("#send"); b.textContent = S.busy ? "Stop" : "Ask"; b.classList.toggle("stop", S.busy); b.type = S.busy ? "button" : "submit"; }
+$("#send").addEventListener("click", e => { if (S.busy) { e.preventDefault(); S.abort?.abort(); } });
+
+/* ---------- chat & project actions ---------- */
+function chatItems(id) {
+  const c = S.chats.find(x => x.id === id) || (S.chat?.id === id ? S.chat : null); if (!c) return [];
+  return [
+    {label: "Rename", icon: "edit", action: () => promptDlg("Rename chat", "Name", c.title || "", v => patchChat(id, {title: v}))},
+    {label: c.pinned ? "Unpin" : "Pin to top", icon: c.pinned ? "pin-off" : "pin", action: () => patchChat(id, {pinned: !c.pinned})},
+    {label: "Move to project…", icon: "project", action: () => moveChat(id)},
+    {label: "Export as Markdown", icon: "export", action: () => { const a = document.createElement("a"); a.href = `/api/chats/${id}/export`; a.click(); }},
+    "-",
+    {label: "Clear messages", icon: "eraser", action: () => clearChat(id)},
+    {label: "Delete chat", icon: "trash", danger: true, action: () => deleteChat(id)},
+  ];
 }
-function renderAnswer(res) {
-  const el = document.createElement("div"); el.className = "a"; el.dataset.id = res.id;
-  const multi = new Set(res.sources.map(s => s.doc)).size > 1;
-  el._sources = res.sources;
-  el.innerHTML = `<div class="body">${md(res.answer, res.sources.length)}</div>
-    <div class="meta">${checkBadge(res.check)}${res.route === "overview" ? `<span class="route">overview of the whole document</span>` : ""}
-      <div class="fb"><button type="button" data-fb="1" aria-label="Good answer">👍</button><button type="button" data-fb="-1" aria-label="Bad answer">👎</button></div></div>
-    <div class="sources">${res.sources.map((s, i) => `<button type="button" class="src" data-src="${i}">
-      <span class="n">${i + 1}</span><span class="p">${multi ? `<small>${esc(s.doc_name)}</small>` : ""}${esc(s.path.split(" › ").slice(1).join(" › ") || s.path)}<small>${pages(s.pages)}</small></span></button>`).join("")}</div>`;
-  return el;
+async function patchChat(id, upd) {
+  await api(`/api/chats/${id}`, {method: "PATCH", json: upd});
+  if (S.chat?.id === id) Object.assign(S.chat, upd);
+  await loadSide(); renderHeader();
+}
+function moveChat(id) {
+  const c = S.chats.find(x => x.id === id);
+  dialog("Move chat to a project", `<div class="checks">${[{id: "", name: "No project"}, ...S.projects].map(p =>
+    `<label><input type="radio" name="mp" value="${p.id}" ${(c?.project || "") === p.id ? "checked" : ""}><span>${esc(p.name)}</span></label>`).join("")}</div>`,
+    [{label: "Cancel"}, {label: "Move", cls: "primary", action: () => patchChat(id, {project: $("#dlgBody input:checked")?.value || ""})}]);
+}
+async function clearChat(id) {
+  const keep = S.chat?.id === id ? S.chat.messages : null;
+  if (S.chat?.id === id) { S.chat.messages = []; renderThread(); }
+  if (await toast("Messages cleared", true)) { await api(`/api/chats/${id}/clear`, {method: "POST"}); loadSide(); }
+  else if (keep && S.chat?.id === id) { S.chat.messages = keep; renderThread(); }
+}
+async function deleteChat(id) {
+  const was = S.chats; S.chats = S.chats.filter(c => c.id !== id); renderChats();
+  const cur = S.chat?.id === id; if (cur) newChat();
+  if (await toast("Chat deleted", true)) { await api(`/api/chats/${id}`, {method: "DELETE"}).catch(() => {}); loadSide(); }
+  else { S.chats = was; renderChats(); if (cur) openChat(id); }
+}
+function projectDialog(p = null) {
+  dialog(p ? `Edit ${p.name}` : "New project", `<div class="field"><label for="pv">Name</label><input type="text" id="pv" value="${esc(p?.name || "")}" placeholder="e.g. Ayurveda thesis"></div>
+    <div class="field"><span class="lbl">Documents in this project</span>${docChecklist(new Set(p?.docs || []), {onlyReady: false})}</div>
+    <p class="path" style="margin:0">A document can be in several projects. Chats in a project search only its documents.</p>`,
+    [{label: "Cancel"}, {label: p ? "Save" : "Create project", cls: "primary", action: async () => {
+      const name = $("#pv").value.trim(); if (!name) { $("#pv").focus(); return false; }
+      const docs = checkedIn();
+      const r = p ? await api(`/api/projects/${p.id}`, {method: "PATCH", json: {name, docs}}) : await api("/api/projects", {method: "POST", json: {name, docs}});
+      await loadSide(); selectProject(r.id);
+    }}]);
+}
+function projectItems(id) {
+  const p = proj(id);
+  return [{label: "New chat in this project", icon: "chat", action: () => { selectProject(id); newChat(); }},
+    {label: "Edit name and documents", icon: "edit", action: () => projectDialog(p)},
+    "-", {label: "Delete project", icon: "trash", danger: true, action: () => confirmDlg(`Delete ${p.name}?`,
+      "The project is removed. Its chats move to “All chats” and its documents stay in the library.", "Delete project",
+      async () => { await api(`/api/projects/${id}`, {method: "DELETE"}); if (S.project === id) selectProject(""); loadSide(); })}];
+}
+function selectProject(id) {
+  S.project = id; store.set("project", id);
+  if (!S.chat || (S.chat.project || "") !== id) { S.chat = null; S.draftDocs = null; history.replaceState(null, "", location.pathname); }
+  showView("chat"); renderProjects(); renderChats(); renderHeader(); if (!S.chat) renderEmpty(); closeRail();
 }
 
-/* ---------- drawer ---------- */
-let procDoc = null;
-function openDrawer(tab) { $("#app").classList.add("drawer-open"); procDoc = tab === "proc" ? procDoc : null;
-  $("#tabSrc").classList.toggle("on", tab === "src"); $("#tabOut").classList.toggle("on", tab === "out"); $("#tabProc").classList.toggle("on", tab === "proc"); }
-function showProcess(slug) {
-  procDoc = slug; openDrawer("proc"); procDoc = slug;
-  const d = docs.find(x => x.slug === slug); if (!d) return;
-  const live = d.status === "processing" || d.status === "queued";
-  const steps = d.steps || [];
-  $("#dbody").innerHTML = `<div class="path">How this document was processed</div><div class="dtitle">${esc(d.name)}</div>
+/* ---------- library ---------- */
+function showView(v) {
+  S.view = v; $("#chatView").hidden = v !== "chat"; $("#libView").hidden = v !== "library";
+  $("#goLibrary").classList.toggle("on", v === "library");
+  if (v === "library") { renderLibrary(); history.replaceState(null, "", "#library"); }
+  renderHeader();
+}
+function renderLibrary() {
+  const q = $("#docSearch").value.trim().toLowerCase(), st = $("#statusFilter").value;
+  const folders = [...new Set(S.docs.map(d => d.folder || ""))].filter(Boolean).sort();
+  $("#folders").innerHTML = [["", `All (${S.docs.length})`], ...folders.map(f => [f, `${f} (${S.docs.filter(d => d.folder === f).length})`]),
+    ...(S.docs.some(d => !d.folder) && folders.length ? [["\u0000", "No folder"]] : [])]
+    .map(([f, l]) => `<button type="button" data-folder="${esc(f)}" class="${S.folder === f ? "on" : ""}">${f && f !== "\u0000" ? icon("folder").replace("<svg>", '<svg style="width:13px;height:13px;vertical-align:-2px;margin-right:4px">') : ""}${esc(l)}</button>`).join("");
+  const list = S.docs.filter(d => (!q || docName(d).toLowerCase().includes(q)) &&
+    (!st || (st === "processing" ? ["processing", "queued"].includes(d.status) : st === "ready" ? ["ready", "partial"].includes(d.status) : d.status === st)) &&
+    (S.folder === "" || (S.folder === "\u0000" ? !d.folder : d.folder === S.folder)))
+    .sort((a, b) => (b.added || "").localeCompare(a.added || ""));
+  $("#dtable").innerHTML = `<div class="drow head"><span></span><span>Document</span><span>Folder</span><span>Status</span><span></span></div>` +
+    (list.length ? list.map(d => {
+      const s = d.status || "queued", live = s === "processing" || s === "queued";
+      const inP = S.projects.filter(p => p.docs.includes(d.slug)).map(p => p.name);
+      return `<div class="drow"><input type="checkbox" data-lsel="${esc(d.slug)}" ${S.libSel.has(d.slug) ? "checked" : ""} aria-label="Select ${esc(docName(d))}">
+        <div><button class="dname" type="button" data-askdoc="${esc(d.slug)}" title="Ask about this document">${esc(docName(d))}</button>
+          <div class="dsub">${d.cards ? `<span>${d.cards} sections</span>` : ""}${d.ocr ? `<span>OCR ${d.ocr.pages} pages</span>` : ""}${d.added ? `<span>added ${esc(d.added)}</span>` : ""}${inP.length ? `<span>in ${esc(inP.join(", "))}</span>` : ""}</div>
+          ${live ? `<div class="bar"><i style="width:${Math.round((d.progress || 0) * 100)}%"></i></div><div class="dmsg">${esc(d.message || "")}</div>` : ""}
+          ${s === "error" ? `<div class="dmsg" style="color:var(--warn)">${esc(d.message)}</div>` : ""}</div>
+        <div class="dfolder${d.folder ? "" : " nof"}">${d.folder ? icon("folder") + esc(d.folder) : `<span style="color:var(--faint)">—</span>`}</div>
+        <div class="dstat"><span class="pill ${esc(s)}">${s === "partial" ? "ready (partial)" : esc(s)}</span></div>
+        <button class="ib" type="button" data-docmenu="${esc(d.slug)}" aria-label="Document options"><svg><use href="#i-dots"/></svg></button></div>`;
+    }).join("") : `<div class="drow" style="grid-template-columns:1fr;color:var(--faint)">${S.docs.length ? "No documents match." : "No documents yet. Drop files above."}</div>`);
+  $("#libCount").textContent = `${S.docs.length} document${S.docs.length === 1 ? "" : "s"}`;
+  const n = S.libSel.size;
+  $("#bulk").hidden = !n;
+  $("#bulk").innerHTML = n ? `<b>${n} selected</b><button class="btn" type="button" id="bAsk">${icon("chat")}Ask about these</button><button class="btn" type="button" id="bProj">${icon("project")}Add to project</button><button class="btn" type="button" id="bFold">${icon("folder")}Move to folder</button><button class="btn" type="button" id="bClear">Clear</button>` : "";
+  if (n) { $("#bAsk").onclick = () => { const l = [...S.libSel]; S.libSel.clear(); newChat(l); };
+    $("#bProj").onclick = () => addToProject([...S.libSel]); $("#bFold").onclick = () => moveToFolder([...S.libSel]);
+    $("#bClear").onclick = () => { S.libSel.clear(); renderLibrary(); }; }
+}
+function docItems(slug) {
+  const d = docBy(slug), ok = d && (d.status === "ready" || d.status === "partial");
+  return [...(ok ? [{label: "Ask about this document", icon: "chat", action: () => newChat([slug])},
+      {label: "Outline", icon: "outline", action: () => showOutline(slug)}] : []),
+    {label: "How it was processed", icon: "steps", action: () => showProcess(slug)},
+    "-",
+    {label: "Add to project…", icon: "project", action: () => addToProject([slug])},
+    {label: "Move to folder…", icon: "folder", action: () => moveToFolder([slug])},
+    {label: "Rename", icon: "edit", action: () => promptDlg("Rename document", "Name shown in the library", docName(d), async v => {
+      await api(`/api/docs/${encodeURIComponent(slug)}`, {method: "PATCH", json: {title: v}}); loadDocs(); })},
+    {label: "Download original", icon: "export", action: () => { const a = document.createElement("a"); a.href = `/api/docs/${encodeURIComponent(slug)}/file`; a.click(); }},
+    "-",
+    {label: "Remove from library", icon: "trash", danger: true, action: () => confirmDlg(`Remove ${docName(d)}?`,
+      "Its index, cards and OCR are deleted from this computer, and it is taken out of every project. Chats keep their answers. This cannot be undone.", "Remove",
+      async () => { await api(`/api/docs/${encodeURIComponent(slug)}`, {method: "DELETE"}); S.libSel.delete(slug); loadDocs(); loadSide(); })}];
+}
+function addToProject(slugs) {
+  if (!S.projects.length) { projectDialogWith(slugs); return; }
+  dialog(`Add ${slugs.length === 1 ? "document" : slugs.length + " documents"} to a project`, `<div class="checks">${S.projects.map(p =>
+    `<label><input type="radio" name="ap" value="${p.id}"><span>${esc(p.name)}</span><span class="path">${p.docs.length} docs</span></label>`).join("")}</div>`,
+    [{label: "New project…", action: () => { setTimeout(() => projectDialogWith(slugs)); }},
+     {label: "Add", cls: "primary", action: async () => { const id = $("#dlgBody input:checked")?.value; if (!id) return false;
+       await api(`/api/projects/${id}`, {method: "PATCH", json: {add_docs: slugs}}); S.libSel.clear(); await loadSide(); renderLibrary(); toast(`Added to ${proj(id).name}`); }}]);
+}
+function projectDialogWith(slugs) { projectDialog(null); $("#dlgBody").querySelectorAll(".checks input").forEach(i => { if (slugs.includes(i.value)) i.checked = true; }); }
+function moveToFolder(slugs) {
+  const folders = [...new Set(S.docs.map(d => d.folder).filter(Boolean))].sort();
+  promptDlg("Move to folder", "Folder name (use / for sub-folders, leave empty for none)", slugs.length === 1 ? docBy(slugs[0])?.folder || "" : "",
+    async v => { await Promise.all(slugs.map(s => api(`/api/docs/${encodeURIComponent(s)}`, {method: "PATCH", json: {folder: v}}))); S.libSel.clear(); loadDocs(); },
+    folders.length ? "Existing: " + folders.map(esc).join(", ") : "");
+}
+async function loadDocs() {
+  try { S.docs = await api("/api/docs"); } catch { return; }
+  $("#docCount").textContent = S.docs.length || "";
+  renderProjects(); renderHeader();
+  if (S.view === "library") renderLibrary();
+  else if (!S.chat || !S.chat.messages.length) { if (!loadDocs.done || loadDocs.n !== ready().length) renderEmpty(); }
+  loadDocs.done = true; loadDocs.n = ready().length;
+  if (S.procDoc && $("#app").classList.contains("panel-open")) showProcess(S.procDoc, true);
+  clearTimeout(loadDocs.t);
+  loadDocs.t = setTimeout(loadDocs, S.docs.some(d => d.status === "processing" || d.status === "queued") ? 1500 : 10000);
+}
+async function upload(files) {
+  if (!files.length) return;
+  const fd = new FormData(); [...files].forEach(f => fd.append("files", f));
+  try {
+    const r = await api("/api/docs", {method: "POST", body: fd});
+    const p = proj(S.chat ? S.chat.project : S.project);
+    if (p) { await api(`/api/projects/${p.id}`, {method: "PATCH", json: {add_docs: r.added}}); loadSide(); }
+    toast(`Reading ${r.added.length} document${r.added.length > 1 ? "s" : ""}${p ? ` into ${p.name}` : ""}. Progress is in the Library.`, false, 4000);
+  } catch (e) { toast(e.message); }
+  loadDocs();
+}
+
+/* ---------- panel ---------- */
+function openPanel(tab) {
+  $("#app").classList.add("panel-open");
+  ["Src", "Out", "Proc"].forEach(t => $("#tab" + t).classList.toggle("on", tab === t.toLowerCase()));
+  if (tab !== "proc") S.procDoc = null;
+}
+function showProcess(slug, refresh = false) {
+  if (!refresh) openPanel("proc"); S.procDoc = slug;
+  const d = docBy(slug); if (!d) return;
+  const live = d.status === "processing" || d.status === "queued", steps = d.steps || [];
+  $("#pbody").innerHTML = `<div class="path">How this document was processed</div><div class="ptitle">${esc(docName(d))}</div>
     <div class="path"><span class="pill ${esc(d.status)}">${esc(d.status)}</span>${d.seconds ? ` · ${d.seconds}s` : ""}${d.added ? ` · added ${esc(d.added)}` : ""}</div>
     ${steps.length ? `<ol class="tl">${steps.map((s, i) => `<li class="${live && i === steps.length - 1 ? "live" : ""}"><small>${s.t}s</small>${esc(s.msg)}</li>`).join("")}</ol>`
-      : `<p class="path">${live ? "Starting…" : "No step log for this document (it was added before step logging existed)."}</p>`}
+      : `<p class="path">${live ? "Starting…" : "No step log for this document."}</p>`}
     ${d.structure ? `<div class="cardbox"><b>Structure method</b><div>${esc(d.structure)}</div></div>` : ""}
     ${d.status === "error" ? `<div class="err">${esc(d.message)}</div>` : ""}`;
 }
 async function showNode(slug, id, fallback) {
-  openDrawer("src"); lastSrc = {slug, id};
-  $("#dbody").innerHTML = `<p class="thinking"><span class="dots">Loading</span></p>`;
+  openPanel("src"); S.lastSrc = {slug, id};
+  $("#pbody").innerHTML = `<p class="note"><span class="dots">Loading</span></p>`;
   try {
-    const n = await api(`/api/docs/${encodeURIComponent(slug)}/node/${encodeURIComponent(id)}`);
-    const c = n.card || {};
-    $("#dbody").innerHTML = `<div class="path">${esc(n.doc_name)} · ${esc(n.path.split(" › ").slice(1).join(" › "))}</div>
-      <div class="dtitle">${esc(n.title)}</div><div class="path">${pages(n.pages)} · <a href="/api/docs/${encodeURIComponent(slug)}/file" target="_blank" rel="noopener">open original</a></div>
-      ${c.summary ? `<div class="cardbox"><b>Index card</b><div>${esc(c.summary)}</div>${(c.questions||[]).length ? `<b>Answers questions like</b><ul>${c.questions.slice(0,4).map(q => `<li>${esc(q)}</li>`).join("")}</ul>` : ""}</div>` : ""}
+    const n = await api(`/api/docs/${encodeURIComponent(slug)}/node/${encodeURIComponent(id)}`), c = n.card || {};
+    $("#pbody").innerHTML = `<div class="path">${esc(n.doc_name)} · ${esc(n.path.split(" › ").slice(1).join(" › "))}</div>
+      <div class="ptitle">${esc(n.title)}</div><div class="path">${pages(n.pages)}${n.pages ? " · " : ""}<a href="/api/docs/${encodeURIComponent(slug)}/file" target="_blank" rel="noopener">open original</a> · <button class="cite" type="button" data-outline="${esc(slug)}">outline</button></div>
+      ${c.summary ? `<div class="cardbox"><b>Index card</b><div>${esc(c.summary)}</div>${(c.questions || []).length ? `<b>Answers questions like</b><ul>${c.questions.slice(0, 4).map(q => `<li>${esc(q)}</li>`).join("")}</ul>` : ""}</div>` : ""}
       <div class="srctext">${esc(n.text || fallback || "")}</div>`;
-  } catch (e) { $("#dbody").innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  } catch (e) { $("#pbody").innerHTML = fallback ? `<p class="path">The document is no longer in the library; this is the passage the answer used.</p><div class="srctext">${esc(fallback)}</div>` : `<div class="err">${esc(e.message)}</div>`; }
 }
 async function showOutline(slug) {
-  openDrawer("out"); outlineDoc = slug;
-  $("#dbody").innerHTML = `<p class="thinking"><span class="dots">Loading outline</span></p>`;
+  openPanel("out"); S.outlineDoc = slug;
+  $("#pbody").innerHTML = `<p class="note"><span class="dots">Loading outline</span></p>`;
   try {
     const o = await api(`/api/docs/${encodeURIComponent(slug)}/outline`);
     const tree = ns => `<ul class="tree">${ns.map(n => `<li><button type="button" data-node="${esc(n.id)}"><span>${esc(n.title)}</span><small>${pages(n.pages)}</small></button>${n.children.length ? tree(n.children) : ""}</li>`).join("")}</ul>`;
-    $("#dbody").innerHTML = `<div class="dtitle">${esc(o.name)}</div>
+    $("#pbody").innerHTML = `<div class="ptitle">${esc(docName(docBy(slug) || {name: o.name}))}</div>
       ${o.ocr ? `<div class="path">Scanned: OCR on ${o.ocr.pages} pages with ${esc(o.ocr.engine)}${o.ocr.low_confidence_pages.length ? ` · low confidence on pages ${o.ocr.low_confidence_pages.join(", ")}` : ""}</div>` : ""}
       ${o.summary ? `<div class="cardbox"><b>Whole document</b><div>${esc(o.summary)}</div></div>` : ""}${tree(o.children)}`;
-  } catch (e) { $("#dbody").innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  } catch (e) { $("#pbody").innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+function closePanel() { $("#app").classList.remove("panel-open"); S.procDoc = null; }
+
+/* ---------- settings ---------- */
+function openSettings() {
+  const s = S.status || {}, theme = store.get("theme", "system"), k = s.keys || {};
+  dialog("Settings", `
+    <div class="field"><span class="lbl">Appearance</span><div class="seg" id="themeSeg">${[["system", "monitor"], ["light", "sun"], ["dark", "moon"]].map(([t, ic]) => `<button type="button" data-theme-set="${t}" class="${theme === t ? "on" : ""}">${icon(ic)}${t[0].toUpperCase() + t.slice(1)}</button>`).join("")}</div></div>
+    <div class="field"><span class="lbl">Answers</span><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="setVerify" ${store.get("verify", true) ? "checked" : ""} style="accent-color:var(--accent)"> Check every cited sentence against its source (about 1 s more per answer)</label></div>
+    <div class="field"><span class="lbl">API keys</span><dl class="kv">${Object.entries(k).map(([n, v]) => `<dt><code>${esc(n)}</code></dt><dd class="${v ? "ok" : "no"}">${v ? "found" : "not set"}</dd>`).join("")}</dl>
+      <span class="path">Keys are read from <code>${esc(s.home || "~/.cortex")}/.env</code>. The free key is used first; the paid key only after its daily quota.</span></div>
+    <div class="field"><span class="lbl">Models</span><dl class="kv">${Object.entries(s.models || {}).map(([a, b]) => `<dt>${esc(a)}</dt><dd><code>${esc(b)}</code></dd>`).join("")}</dl></div>
+    <div class="field"><span class="lbl">Memory</span><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn" type="button" id="learn">${icon("thumbs-up")}Learn from liked answers</button><span class="path">Adds questions from answers you liked to the index cards that answered them, so similar questions find those sections faster.</span></div></div>
+    <div class="field"><span class="lbl">Keyboard</span><dl class="kv"><dt><kbd>⌘/Ctrl</kbd> <kbd>K</kbd></dt><dd>Search chats</dd><dt><kbd>⌘/Ctrl</kbd> <kbd>⇧</kbd> <kbd>O</kbd></dt><dd>New chat</dd><dt><kbd>/</kbd></dt><dd>Type a question</dd><dt><kbd>Esc</kbd></dt><dd>Close panel or menu</dd></dl></div>
+    <div class="path">Data folder <code>${esc(s.home || "")}</code> · version ${esc(s.version || "")}</div>`, [{label: "Done", cls: "primary"}]);
+  $("#themeSeg").onclick = e => { const b = e.target.closest("[data-theme-set]"); if (!b) return; store.set("theme", b.dataset.themeSet); applyTheme();
+    $("#themeSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); };
+  $("#setVerify").onchange = e => { store.set("verify", e.target.checked); $("#verify").checked = e.target.checked; };
+  $("#learn").onclick = async () => { const b = $("#learn"); b.disabled = true; b.textContent = "Learning…";
+    try { const r = await api("/api/consolidate", {method: "POST"}); const n = Object.values(r.changed).reduce((x, y) => x + y, 0);
+      b.textContent = n ? `Learned ${n} question${n > 1 ? "s" : ""}` : "Nothing new to learn"; } catch (e) { b.textContent = "Failed: " + e.message; } };
 }
 
 /* ---------- events ---------- */
 document.addEventListener("click", async e => {
-  const t = e.target.closest("button,[data-sel]"); if (!t) return;
-  if (t.dataset.ask) { ask(t.dataset.ask); }
-  else if (t.dataset.del) { const d = docs.find(x => x.slug === t.dataset.del);
-    if (t.dataset.confirm !== "1") { t.dataset.confirm = "1"; t.textContent = "Remove?"; setTimeout(() => { t.dataset.confirm = ""; t.textContent = "🗑"; }, 3000); return; }
-    await api(`/api/docs/${encodeURIComponent(t.dataset.del)}`, {method: "DELETE"}); loadDocs(); }
-  else if (t.dataset.out) { showOutline(t.dataset.out); }
-  else if (t.dataset.proc) { showProcess(t.dataset.proc); }
-  else if (t.dataset.node && outlineDoc) { showNode(outlineDoc, t.dataset.node); }
-  else if (t.dataset.cite || t.dataset.src) {
-    const a = t.closest(".a"), i = t.dataset.cite ? +t.dataset.cite - 1 : +t.dataset.src, s = a._sources[i];
-    if (t.dataset.cite) { const b = a.querySelector(`[data-src="${i}"]`); b.classList.remove("flash"); void b.offsetWidth; b.classList.add("flash"); }
+  const t = e.target.closest("button,[data-chat],[data-proj]"); if (!t) return;
+  const d = t.dataset;
+  if (d.chatmenu) { e.stopPropagation(); menu(t, chatItems(d.chatmenu)); }
+  else if (d.projmenu) { e.stopPropagation(); menu(t, projectItems(d.projmenu)); }
+  else if (d.docmenu) menu(t, docItems(d.docmenu));
+  else if (d.chat) openChat(d.chat);
+  else if (d.proj !== undefined) selectProject(d.proj);
+  else if (d.ask) ask(d.ask);
+  else if (d.upload !== undefined) $("#file").click();
+  else if (d.askdoc) newChat([d.askdoc]);
+  else if (d.folder !== undefined) { S.folder = d.folder; renderLibrary(); }
+  else if (d.outline) showOutline(d.outline);
+  else if (d.node && S.outlineDoc) showNode(S.outlineDoc, d.node);
+  else if (d.cite || d.src) {
+    const a = t.closest(".a"), i = d.cite ? +d.cite - 1 : +d.src, s = a._res.sources[i];
+    if (d.cite) { const b = a.querySelector(`[data-src="${i}"]`); if (b) { b.classList.remove("flash"); void b.offsetWidth; b.classList.add("flash"); } }
     showNode(s.doc, s.node_id, s.text);
   }
-  else if (t.dataset.fb) { const a = t.closest(".a");
-    await api("/api/feedback", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id: a.dataset.id, value: +t.dataset.fb})});
-    a.querySelectorAll("[data-fb]").forEach(b => b.classList.toggle("on", b === t)); }
+  else if (d.copy !== undefined) { const r = t.closest(".a")._res;
+    const txt = r.answer + (r.sources.length ? "\n\nSources:\n" + r.sources.map((s, i) => `[${i + 1}] ${s.doc_name} › ${s.path}${s.pages ? " (" + pages(s.pages) + ")" : ""}`).join("\n") : "");
+    try { await navigator.clipboard.writeText(txt); toast("Answer copied", false, 1800); } catch { toast("Copy is not available here."); } }
+  else if (d.retry !== undefined) { const m = S.chat?.messages[+d.retry]; if (m) ask(m.question, +d.retry); }
+  else if (d.fb) { const a = t.closest(".a"), v = +d.fb;
+    await api("/api/feedback", {method: "POST", json: {id: a.dataset.id, value: v}}).catch(() => {});
+    a._res.feedback = v; a.querySelectorAll("[data-fb]").forEach(b => b.classList.toggle("on", b === t));
+    if (v === 1) toast("Thanks. “Learn from liked answers” in Settings teaches this to the index.", false, 3000); }
 });
-document.addEventListener("change", e => { const s = e.target.dataset.sel; if (s) { e.target.checked ? selected.add(s) : selected.delete(s); saveSel(); renderScope(); } });
-$("#selAll").onclick = () => { selected.clear(); saveSel(); renderDocs(); };
-$("#close").onclick = () => $("#app").classList.remove("drawer-open");
-$("#tabOut").onclick = () => { const d = outlineDoc || lastSrc?.slug || readyDocs()[0]?.slug; if (d) showOutline(d); };
-$("#tabSrc").onclick = () => { if (lastSrc) showNode(lastSrc.slug, lastSrc.id); };
-$("#tabProc").onclick = () => { const d = procDoc || outlineDoc || lastSrc?.slug || docs[0]?.slug; if (d) showProcess(d); };
-$("#learn").onclick = async () => { const b = $("#learn"); b.disabled = true; b.textContent = "Learning…";
-  try { const r = await api("/api/consolidate", {method: "POST"}); const n = Object.values(r.changed).reduce((x, y) => x + y, 0);
-    b.textContent = n ? `Learned ${n} question${n > 1 ? "s" : ""}` : "Nothing new to learn"; } catch (e) { b.textContent = "Failed: " + e.message; }
-  setTimeout(() => { b.disabled = false; b.textContent = "Learn from 👍 answers"; }, 3500); };
-const drop = $("#drop");
+document.addEventListener("keydown", e => {
+  const t = e.target.closest?.("[data-chat],[data-proj]");
+  if (t && (e.key === "Enter" || e.key === " ") && e.target === t) { e.preventDefault(); t.click(); }
+});
+document.addEventListener("change", e => { const s = e.target.dataset.lsel; if (s) { e.target.checked ? S.libSel.add(s) : S.libSel.delete(s); renderLibrary(); } });
+$("#newChat").onclick = () => newChat();
+$("#addProject").onclick = () => projectDialog();
+$("#chatSearch").oninput = renderChats;
+$("#goLibrary").onclick = () => { showView("library"); closeRail(); };
+$("#goSettings").onclick = () => { openSettings(); closeRail(); };
+$("#openRail").onclick = () => { $("#rail").classList.add("open"); $("#scrim").hidden = false; };
+$("#railClose").onclick = closeRail;
+$("#scrim").onclick = closeRail;
+$("#scopeChip").onclick = openScope;
+$("#chatMenu").onclick = e => S.chat && menu(e.currentTarget, chatItems(S.chat.id));
+$("#titleText").ondblclick = () => S.chat && S.view === "chat" && promptDlg("Rename chat", "Name", S.chat.title || "", v => patchChat(S.chat.id, {title: v}));
+$("#closePanel").onclick = closePanel;
+$("#tabOut").onclick = () => { const d = S.outlineDoc || S.lastSrc?.slug || ready()[0]?.slug; if (d) showOutline(d); };
+$("#tabSrc").onclick = () => { if (S.lastSrc) showNode(S.lastSrc.slug, S.lastSrc.id); else $("#pbody").innerHTML = `<p class="path">Click a citation like [1] in an answer to see its source here.</p>`, openPanel("src"); };
+$("#tabProc").onclick = () => { const d = S.procDoc || S.outlineDoc || S.lastSrc?.slug || S.docs[0]?.slug; if (d) showProcess(d); };
+$("#verify").onchange = e => store.set("verify", e.target.checked);
+$("#attach").onclick = () => $("#file").click();
+$("#uploadBtn").onclick = () => $("#file").click();
 $("#file").onchange = e => { upload(e.target.files); e.target.value = ""; };
+$("#docSearch").oninput = renderLibrary; $("#statusFilter").onchange = renderLibrary;
+const drop = $("#drop");
+drop.onclick = () => $("#file").click();
 drop.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("#file").click(); } });
 ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
 ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
 drop.addEventListener("drop", e => upload(e.dataTransfer.files));
+// files dropped anywhere on the chat go to the library too
+$("#chatView").addEventListener("dragover", e => { if ([...e.dataTransfer.types].includes("Files")) e.preventDefault(); });
+$("#chatView").addEventListener("drop", e => { if (e.dataTransfer.files.length) { e.preventDefault(); upload(e.dataTransfer.files); } });
 const q = $("#q");
 q.addEventListener("input", () => { q.style.height = "auto"; q.style.height = Math.min(q.scrollHeight, 200) + "px"; });
 q.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("#form").requestSubmit(); } });
-$("#form").onsubmit = e => { e.preventDefault(); const v = q.value; q.value = ""; q.style.height = "auto"; ask(v); };
+$("#form").onsubmit = e => { e.preventDefault(); if (S.busy) return; const v = q.value; if (!v.trim()) return; q.value = ""; q.style.height = "auto"; ask(v); };
+document.addEventListener("keydown", e => {
+  const mod = e.metaKey || e.ctrlKey;
+  if (mod && e.key.toLowerCase() === "k") { e.preventDefault(); if (innerWidth < 768) $("#openRail").click(); $("#chatSearch").focus(); }
+  else if (mod && e.shiftKey && e.key.toLowerCase() === "o") { e.preventDefault(); newChat(); }
+  else if (e.key === "Escape") { if (!$("#pop").hidden) closeMenu(); else if ($("#rail").classList.contains("open")) closeRail(); else if ($("#app").classList.contains("panel-open")) closePanel(); }
+  else if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && !$("#dlg").open) { e.preventDefault(); showView("chat"); q.focus(); }
+});
+window.addEventListener("hashchange", route);
+function route() {
+  const h = location.hash;
+  if (h.startsWith("#chat=")) openChat(h.slice(6));
+  else if (h === "#library") showView("library");
+}
 
 (async () => {
-  try { const s = await api("/api/status"); $("#ver").textContent = "v" + s.version; $("#home").textContent = "Data: " + s.home;
-    $("#keyBanner").hidden = s.keys.GROQ_API_KEY || s.keys.GROQ_PAID_API_KEY; } catch {}
-  loadDocs();
+  try { S.status = await api("/api/status"); $("#keyBanner").hidden = S.status.keys.GROQ_API_KEY || S.status.keys.GROQ_PAID_API_KEY; } catch {}
+  await Promise.all([loadSide(), loadDocs()]);
+  if (location.hash) route(); else { renderHeader(); renderEmpty(); }
 })();
 </script>
 </body>

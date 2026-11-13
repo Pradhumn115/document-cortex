@@ -135,6 +135,9 @@ def split_claims(answer: str) -> list[Claim]:
     return claims
 
 
+BATCH = 8  # claims per checking request
+
+
 def verify(llm: LLM, answer: str, sources: list[dict]) -> tuple[str, dict]:
     claims = split_claims(answer)
     cited = [c for c in claims if c.cites]
@@ -144,13 +147,33 @@ def verify(llm: LLM, answer: str, sources: list[dict]) -> tuple[str, dict]:
         return answer, report
 
     src = "\n\n".join(f"[{i}] {s['path']}\n{s['text'][:SOURCE_CHARS]}" for i, s in enumerate(sources, 1))
-    listing = "\n".join(f"CLAIM {c.idx} (cites {', '.join(f'[{n}]' for n in c.cites)}): "
-                        f"{CITE.sub('', c.text).strip()}" for c in cited)
-    try:
-        data = parse_json_object(llm(SYSTEM, f"SOURCES:\n\n{src}\n\nCLAIMS:\n{listing}"))
-        verdicts = {int(v["claim"]): v for v in data.get("verdicts", [])}
-    except Exception as e:  # checking failed: say so, never block the answer
-        report["error"] = str(e)[:200]
+
+    def check_batch(batch: list) -> dict:
+        # long answers are checked in small batches: one request with 20 claims can use up the
+        # small model's whole output budget on reasoning and come back empty
+        listing = "\n".join(f"CLAIM {c.idx} (cites {', '.join(f'[{n}]' for n in c.cites)}): "
+                            f"{CITE.sub('', c.text).strip()}" for c in batch)
+        last = None
+        for _ in range(2):
+            try:
+                data = parse_json_object(llm(SYSTEM, f"SOURCES:\n\n{src}\n\nCLAIMS:\n{listing}"))
+                return {int(v["claim"]): v for v in data.get("verdicts", []) if str(v.get("claim", "")).isdigit()}
+            except Exception as e:
+                last = e
+        raise last
+
+    batches = [cited[i:i + BATCH] for i in range(0, len(cited), BATCH)]
+    verdicts: dict = {}
+    failed: list[str] = []
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(min(3, len(batches))) as ex:
+        for fut in [ex.submit(check_batch, b) for b in batches]:
+            try:
+                verdicts.update(fut.result())
+            except Exception as e:  # checking failed: say so, never block the answer
+                failed.append(str(e)[:200])
+    if failed and not verdicts:
+        report["error"] = failed[0]
         return answer, report
 
     valid = set(range(1, len(sources) + 1))
@@ -158,6 +181,11 @@ def verify(llm: LLM, answer: str, sources: list[dict]) -> tuple[str, dict]:
     for c in cited:
         v = verdicts.get(c.idx, {})
         c.verdict = str(v.get("verdict", "unchecked")).lower()
+        if c.verdict == "unchecked":
+            report["unchecked"] = report.get("unchecked", 0) + 1
+            report["details"].append({"claim": CITE.sub("", c.text).strip()[:100], "cited": c.cites,
+                                      "verdict": "unchecked", "supported_by": [], "note": "the checker gave no verdict"})
+            continue
         c.supported_by = [int(n) for n in v.get("supported_by", []) if str(n).isdigit() and int(n) in valid]
         c.note = str(v.get("note", ""))[:120]
         new = c.text

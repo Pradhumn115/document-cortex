@@ -432,3 +432,64 @@ def test_ocr_escalation_rules():
     assert escalation_threshold("hin+san+eng") > escalation_threshold("eng") >= 80
     assert looks_runaway("नाड़ी परीक्षा " * 400) and not looks_runaway("A short, ordinary page of text.")
     assert "draft" in vlm_prompt("hin", "कुछ पाठ") and "Hindi" in vlm_prompt("hin")
+
+
+def test_workspace_projects_and_chats(tmp_path):
+    from cortex.workspace import Workspace
+    ws = Workspace(tmp_path)
+    p = ws.create_project("Thesis", ["a", "b"])
+    ws.update_project(p["id"], add_docs=["b", "c"])
+    assert ws.project(p["id"])["docs"] == ["a", "b", "c"]
+    c = ws.create_chat(p["id"])
+    res = {"answer": "Guduchi is a herb [1].", "sources": [{"doc": "a", "doc_name": "A", "path": "A › Guduchi", "pages": [3, 4]}]}
+    ws.append(c["id"], "What is Guduchi used for in classical texts?", res)
+    ws.append(c["id"], "its dose?", {"answer": "1-3 g [1].", "sources": []}, standalone="What is the dose of Guduchi?")
+    got = ws.chat(c["id"])
+    assert got["title"].startswith("What is Guduchi") and len(got["messages"]) == 2
+    assert ws.history_pairs(c["id"])[-1][0] == "What is the dose of Guduchi?"
+    md = ws.export_markdown(c["id"])
+    assert "## its dose?" in md and "A › Guduchi (p. 3–4)" in md
+    ws.delete_message(c["id"], 0)
+    assert len(ws.chat(c["id"])["messages"]) == 1
+    assert ws.clear_chat(c["id"])["messages"] == []
+    ws.forget_doc("a")
+    assert "a" not in ws.project(p["id"])["docs"]
+    ws.delete_project(p["id"])
+    assert ws.chats()[0]["project"] == ""   # chats survive their project
+    import pytest
+    with pytest.raises(KeyError):
+        ws.chat("../../etc/passwd")
+
+
+def test_web_chat_and_doc_endpoints(tmp_path):
+    from fastapi.testclient import TestClient
+    from cortex.library import Library
+    from cortex.web import create_app
+    lib = Library(tmp_path)
+    (lib.docs_dir / "d1").mkdir()
+    (lib.docs_dir / "d1" / "meta.json").write_text('{"name": "d1.txt", "status": "ready"}')
+    c = TestClient(create_app(lib))
+    r = c.patch("/api/docs/d1", json={"title": "My notes", "folder": " Ayurveda / Classics "}).json()
+    assert r["title"] == "My notes" and r["folder"] == "Ayurveda/Classics"
+    ch = c.post("/api/chats", json={}).json()
+    assert c.patch(f"/api/chats/{ch['id']}", json={"pinned": True}).json()["pinned"] is True
+    assert c.get(f"/api/chats/{ch['id']}/export").headers["content-type"].startswith("text/markdown")
+    assert c.delete(f"/api/chats/{ch['id']}").json()["ok"] and c.get(f"/api/chats/{ch['id']}").status_code == 404
+
+
+def test_long_answers_are_checked_in_batches():
+    import json as _j
+    import re as _re
+    from cortex.verify import BATCH, verify
+    calls = []
+
+    def fake(system, user):
+        calls.append(user)
+        ids = [int(x) for x in _re.findall(r"CLAIM (\d+)", user)]
+        if len(calls) == 1:
+            return ""  # one empty reply is retried, not fatal
+        return _j.dumps({"verdicts": [{"claim": i, "verdict": "supported", "supported_by": [1]} for i in ids]})
+    ans = " ".join(f"Fact number {i} is stated here [1]." for i in range(1, 21))
+    _, rep = verify(fake, ans, [{"path": "A", "text": "x"}])
+    assert rep["supported"] == 20 and not rep.get("error")
+    assert max(len(_re.findall(r"CLAIM \d+", u)) for u in calls) <= BATCH

@@ -13,11 +13,18 @@ POST   /api/ask/stream           same, streamed as NDJSON: process steps live, t
 POST   /api/feedback             {id, value: 1 | -1}
 GET    /api/history
 POST   /api/consolidate
+PATCH  /api/docs/{slug}          {title?, folder?}
+GET    /api/suggest?docs=a,b     example questions from the documents' index cards
+GET    /api/projects             POST {name, docs}   PATCH/DELETE /api/projects/{id}
+GET    /api/chats?project=       POST {project?, docs?}
+GET    /api/chats/{id}           PATCH {title?, pinned?, project?, docs?}   DELETE
+POST   /api/chats/{id}/clear     DELETE /api/chats/{id}/messages/{i}   GET /api/chats/{id}/export
 """
 from __future__ import annotations
 
 import json
 import queue
+import re
 import shutil
 import tempfile
 import threading
@@ -26,11 +33,12 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, StreamingResponse
 from pydantic import BaseModel
 
 from . import __version__, config
 from .library import Library
+from .workspace import Workspace
 
 STATIC = Path(__file__).parent / "static"
 SUPPORTED = {".pdf", ".docx", ".md", ".markdown", ".txt", ".text", ".rst",
@@ -41,6 +49,28 @@ class AskIn(BaseModel):
     question: str
     docs: list[str] | None = None
     verify: bool = True
+    chat_id: str | None = None
+    project: str | None = None
+    replace: int | None = None  # retry: drop this message index first
+    chat_docs: list[str] | None = None  # a new chat's hand-picked documents (None: follow its project)
+
+
+class DocPatch(BaseModel):
+    title: str | None = None
+    folder: str | None = None
+
+
+class ProjectIn(BaseModel):
+    name: str | None = None
+    docs: list[str] | None = None
+    add_docs: list[str] | None = None
+
+
+class ChatIn(BaseModel):
+    title: str | None = None
+    pinned: bool | None = None
+    project: str | None = None
+    docs: list[str] | None = None
 
 
 class FeedbackIn(BaseModel):
@@ -50,6 +80,7 @@ class FeedbackIn(BaseModel):
 
 def create_app(lib: Library | None = None) -> FastAPI:
     lib = lib or Library()
+    ws = Workspace(lib.root)
     app = FastAPI(title="Document Cortex", version=__version__)
 
     @app.get("/", response_class=HTMLResponse)
@@ -58,7 +89,12 @@ def create_app(lib: Library | None = None) -> FastAPI:
 
     @app.get("/api/status")
     def status():
-        return {"version": __version__, "keys": config.keys_status(), "home": str(lib.root)}
+        from .llm import GROQ_FALLBACK
+        from .ocr import VLM_DEFAULT
+        return {"version": __version__, "keys": config.keys_status(), "home": str(lib.root),
+                "models": {"Index cards and answers": GROQ_FALLBACK[0], "Citation check": "openai/gpt-oss-20b",
+                           "Handwriting and poor scans": VLM_DEFAULT, "Printed scans": "Tesseract",
+                           "Search embeddings": "intfloat/multilingual-e5-small (local)"}}
 
     @app.get("/api/docs")
     def docs():
@@ -83,7 +119,113 @@ def create_app(lib: Library | None = None) -> FastAPI:
             lib.delete(slug)
         except FileNotFoundError:
             raise HTTPException(404, "no such document")
+        ws.forget_doc(slug)
         return {"ok": True}
+
+    @app.patch("/api/docs/{slug}")
+    def patch_doc(slug: str, p: DocPatch):
+        if not (lib.docs_dir / slug / "meta.json").exists():
+            raise HTTPException(404, "no such document")
+        upd = {}
+        if p.title is not None:
+            upd["title"] = p.title.strip()[:120]
+        if p.folder is not None:
+            upd["folder"] = "/".join(x.strip() for x in p.folder.split("/") if x.strip())[:120]
+        return {"slug": slug, **lib._write_meta(slug, **upd)}
+
+    @app.get("/api/suggest")
+    def suggest(docs: str = ""):
+        import random
+        slugs = [d for d in docs.split(",") if d] or lib.ready()
+        pool = []
+        for slug in slugs[:12]:
+            if slug not in lib.ready():
+                continue
+            d = lib.doc(slug)
+            tops = ["root"] + list(d.tree.root.children)[:12]
+            qs = [q for nid in tops for q in d.cards.get(nid, {}).get("questions", [])[:2]]
+            pool += [(slug, q) for q in qs if 12 <= len(q) <= 110]
+        rng = random.Random(len(pool))
+        rng.shuffle(pool)
+        per, out = {}, []
+        for slug, q in pool:  # at most two per document
+            if per.get(slug, 0) < 2:
+                per[slug] = per.get(slug, 0) + 1
+                out.append({"doc": slug, "question": q})
+            if len(out) >= 4:
+                break
+        return out
+
+    # ---------------------------------------------------------- projects
+    @app.get("/api/projects")
+    def projects():
+        return ws.projects()
+
+    @app.post("/api/projects")
+    def new_project(p: ProjectIn):
+        return ws.create_project(p.name or "", p.docs)
+
+    @app.patch("/api/projects/{pid}")
+    def patch_project(pid: str, p: ProjectIn):
+        try:
+            return ws.update_project(pid, p.name, p.docs, p.add_docs)
+        except KeyError:
+            raise HTTPException(404, "no such project")
+
+    @app.delete("/api/projects/{pid}")
+    def del_project(pid: str):
+        ws.delete_project(pid)
+        return {"ok": True}
+
+    # ------------------------------------------------------------- chats
+    def _chat(cid: str) -> dict:
+        try:
+            return ws.chat(cid)
+        except KeyError:
+            raise HTTPException(404, "no such chat")
+
+    @app.get("/api/chats")
+    def chats(project: str | None = None):
+        return ws.chats(project)
+
+    @app.post("/api/chats")
+    def new_chat(c: ChatIn):
+        return ws.create_chat(c.project or "", c.docs, c.title or "")
+
+    @app.get("/api/chats/{cid}")
+    def get_chat(cid: str):
+        return _chat(cid)
+
+    @app.patch("/api/chats/{cid}")
+    def patch_chat(cid: str, c: ChatIn):
+        _chat(cid)
+        return ws.update_chat(cid, **{k: v for k, v in c.model_dump().items() if v is not None})
+
+    @app.delete("/api/chats/{cid}")
+    def del_chat(cid: str):
+        _chat(cid)
+        ws.delete_chat(cid)
+        return {"ok": True}
+
+    @app.post("/api/chats/{cid}/clear")
+    def clear_chat(cid: str):
+        _chat(cid)
+        return ws.clear_chat(cid)
+
+    @app.delete("/api/chats/{cid}/messages/{i}")
+    def del_message(cid: str, i: int):
+        _chat(cid)
+        try:
+            return ws.delete_message(cid, i)
+        except KeyError:
+            raise HTTPException(404, "no such message")
+
+    @app.get("/api/chats/{cid}/export")
+    def export_chat(cid: str):
+        c = _chat(cid)
+        name = re.sub(r"[^\w -]+", "", c.get("title") or "chat").strip()[:60] or "chat"
+        return PlainTextResponse(ws.export_markdown(cid), media_type="text/markdown; charset=utf-8",
+                                 headers={"Content-Disposition": f'attachment; filename="{name}.md"'})
 
     def _doc(slug: str):
         if slug not in lib.ready():
@@ -142,13 +284,27 @@ def create_app(lib: Library | None = None) -> FastAPI:
             raise HTTPException(400, "empty question")
         events: queue.Queue = queue.Queue()
 
+        cid = q.chat_id
+        if cid:
+            _chat(cid)
+            if q.replace is not None:
+                try:
+                    ws.delete_message(cid, q.replace)
+                except KeyError:
+                    pass
+        else:
+            cid = ws.create_chat(q.project or "", q.chat_docs)["id"]
+        history = ws.history_pairs(cid) if ws.chat(cid)["messages"] else None
+        events.put({"type": "chat", "chat_id": cid})
+
         def work():
             try:
-                res = lib.ask(q.question.strip(), q.docs or None, verify=q.verify,
+                res = lib.ask(q.question.strip(), q.docs or None, verify=q.verify, history=history,
                               on_step=lambda st: events.put({"type": "step", **st}))
                 for s in res["sources"]:
                     s["text"] = s["text"][:1200]
-                events.put({"type": "result", **res})
+                ws.append(cid, q.question.strip(), res, res.get("standalone"))
+                events.put({"type": "result", "chat_id": cid, **res})
             except Exception as e:  # shown in the UI instead of a silent failure
                 events.put({"type": "error", "message": str(e)[:500]})
             events.put(None)

@@ -6,7 +6,7 @@ Everyday use
   cortex list                       documents in the library
   cortex ask "question" [--doc SLUG ...] [--show-check]
   cortex remove SLUG
-  cortex history | consolidate      episodic memory: past questions, learn from 👍
+  cortex history | consolidate      episodic memory: past questions, learn from liked answers
   cortex keys                       which API keys were found
 
 Data lives in $CORTEX_HOME (default ~/.cortex); keys in ./.env or ~/.cortex/.env.
@@ -227,7 +227,7 @@ def cmd_remove(a):
 def cmd_history(a):
     from .library import Library
     for h in Library().history_items(a.n):
-        fb = {1: "👍", -1: "👎"}.get(h.get("feedback", 0), "  ")
+        fb = {1: "+1", -1: "-1"}.get(h.get("feedback", 0), "  ")
         print(f"{fb} {h['ts']}  [{', '.join(h['docs'])[:40]}]  {h['question'][:80]}  (id {h['id']})")
 
 
@@ -241,7 +241,7 @@ def cmd_consolidate(a):
     _quiet_hf()
     from .library import Library
     changed = Library().consolidate()
-    print(f"learned questions added to {len(changed)} documents" if changed else "nothing new to learn (no new 👍)")
+    print(f"learned questions added to {len(changed)} documents" if changed else "nothing new to learn (no newly liked answers)")
 
 
 def cmd_keys(a):
@@ -307,7 +307,7 @@ def main(argv=None):
     fb.add_argument("value", choices=["up", "down"])
     fb.set_defaults(fn=cmd_feedback)
 
-    sub.add_parser("consolidate", help="learn from 👍 answers").set_defaults(fn=cmd_consolidate)
+    sub.add_parser("consolidate", help="learn from liked answers").set_defaults(fn=cmd_consolidate)
 
     ky = sub.add_parser("keys", help="show which API keys were found")
     ky.add_argument("--env-file")

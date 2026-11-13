@@ -228,8 +228,10 @@ class Library:
 
     # ---- asking
     def ask(self, question: str, slugs: list[str] | None = None, *, provider: str = "groq",
-            model: str | None = None, verify: bool = True, k: int = 6, on_step=None) -> dict:
-        """Answer from the library. on_step(step) receives each process step live."""
+            model: str | None = None, verify: bool = True, k: int = 6, on_step=None,
+            history: list[tuple[str, str]] | None = None) -> dict:
+        """Answer from the library. on_step(step) receives each process step live.
+        history: earlier (question, answer) turns of the chat, for follow-up questions."""
         from .ask import answer_docs
         from .llm import make_llm
         from .trace import Trace
@@ -243,7 +245,18 @@ class Library:
                            for d in docs][:12]
         quiet = lambda *_: None
         llm = make_llm(provider, model, log=quiet)
-        res = answer_docs(docs, llm, question, k=k, trace=trace)
+        standalone = question
+        if history:
+            with trace.timed("followup", "Reading the question in the context of this chat") as st:
+                try:
+                    standalone = rewrite_followup(llm, question, history)
+                except Exception as e:  # the question is still answerable as asked
+                    st["detail"] = f"Could not use the earlier turns ({str(e)[:80]}); searching the question as asked."
+                else:
+                    st["detail"] = (f"Read as: “{standalone}”" if standalone != question
+                                    else "The question stands on its own.")
+        res = answer_docs(docs, llm, standalone, k=k, trace=trace)
+        res["standalone"] = standalone if standalone != question else None
         for note in getattr(llm, "switched", []):
             trace.step("quota", "Switched API key", note)
         res["raw_answer"] = res["answer"]
@@ -255,8 +268,9 @@ class Library:
                                       f"({getattr(checker, 'label', 'small model')})") as st:
                 res["answer"], res["check"] = check(checker, res["answer"], res["sources"])
                 st["detail"] = summary_line(res["check"])
-                mark = {"supported": "✓", "partial": "◐", "re-cited": "↻", "unsupported": "✗"}
-                st["items"] = [f"{mark.get(d['verdict'], '?')} {d['verdict']}: “{d['claim'][:90]}”"
+                label = {"supported": "Supported", "partial": "Partly supported", "re-cited": "Re-cited",
+                         "unsupported": "Not in sources"}
+                st["items"] = [f"{label.get(d['verdict'], d['verdict'])}: “{d['claim'][:90]}”"
                                + (f" — {d['note']}" if d.get("note") and d["verdict"] != "supported" else "")
                                for d in res["check"].get("details", [])]
         else:
@@ -341,6 +355,21 @@ class Library:
         return changed
 
 
+FOLLOWUP = """You rewrite the user's latest question so it can be understood without the conversation \
+before it: replace words like "it", "this", "that herb", "the second one" with what they refer to. \
+Keep the user's language and wording otherwise. If the question already stands on its own, return it \
+unchanged. Reply with the question only."""
+
+
+def rewrite_followup(llm, question: str, history: list[tuple[str, str]]) -> str:
+    cite = re.compile(r"\[\d+\]")
+    convo = "\n\n".join(f"USER: {q}\nASSISTANT: {cite.sub('', a)[:600]}" for q, a in history[-3:])
+    out = llm(FOLLOWUP, f"CONVERSATION:\n{convo}\n\nLATEST QUESTION: {question}").strip()
+    out = re.sub(r"<think>.*?</think>", "", out, flags=re.S).strip().strip('"“”').splitlines()
+    out = out[0].strip() if out else ""
+    return out if 3 <= len(out) <= 3 * len(question) + 200 else question
+
+
 def make_checker(provider: str, log):
     """Small model for citation checks: gpt-oss-20b, first key then paid key."""
     import os
@@ -350,6 +379,6 @@ def make_checker(provider: str, log):
     chain, names = [], []
     for env, label in (("GROQ_API_KEY", "first"), ("GROQ_PAID_API_KEY", "paid")):
         if os.environ.get(env):
-            chain.append(make_llm("groq", "openai/gpt-oss-20b", fallback=False, api_key=os.environ[env]))
+            chain.append(make_llm("groq", "openai/gpt-oss-20b", fallback=False, api_key=os.environ[env], max_tokens=6000))
             names.append(f"gpt-oss-20b ({label} key)")
     return _fallback_chain(chain, names, log)

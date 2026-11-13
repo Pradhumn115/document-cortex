@@ -28,9 +28,12 @@ multilingual embedding model (~470 MB).
 
 ## Use it
 
-**Web UI** — `cortex serve`: drop files on the left, watch them being read, tick documents to
-narrow a question, click any `[n]` to see the exact source passage, browse each document's
-outline, rate answers 👍/👎, and press *Learn from 👍 answers*.
+**Web UI** — `cortex serve`: chats with history (new, rename, pin, search, export as Markdown,
+clear or delete with undo), projects that group documents and their chats, a library with
+folders, search and bulk actions, follow-up questions ("what is its dose?"), a picker for which
+documents a chat searches, click any `[n]` to see the exact source passage, each document's
+outline, the live process trace, settings (theme, keys, models) — on desktop and phone.
+See [docs/UX.md](docs/UX.md).
 
 **Command line**
 
@@ -146,7 +149,8 @@ cortex/
   bench.py      benchmarks; profiles/ has the Bhavaprakasha corpus loader
   evalset.py    independent benchmark: generate, run, score, OCR error rate
 report/         project report (template + build script output)
-tests/          38 tests, no network needed
+  workspace.py  projects and chats (JSON files next to the library)
+tests/          41 tests, no network needed
 ```
 
 See [ROADMAP.md](ROADMAP.md) for what is built and what is next.
