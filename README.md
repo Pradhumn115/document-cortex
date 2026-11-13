@@ -12,12 +12,13 @@ Japanese and Arabic.
 
 ## Demo (1 minute)
 
-[![Document Cortex demo: an English PDF, a French article and a scanned Hindi book, each answered with checked citations](docs/media/demo-poster.jpg)](docs/media/document-cortex-demo.mp4)
+[![Document Cortex demo: an English PDF, a French article and a scanned Hindi book, each answered with checked citations](docs/media/demo-preview.gif)](https://github.com/Pradhumn115/document-cortex/raw/main/docs/media/document-cortex-demo.mp4)
 
-[Watch the demo video](docs/media/document-cortex-demo.mp4) (60 s, MP4). Every shot is the real app:
-it answers a question about the Transformer paper (2/2 claims supported, cited to page 7), a French
-Wikipedia article and a scanned Hindi book, then shows the held-out benchmark (91% vs 82% for plain RAG).
-Made with [HyperFrames](https://hyperframes.heygen.com); music from Apple Loops.
+A silent 30-second preview. **[Download the full 60-second video with sound (MP4, 5.6 MB)](https://github.com/Pradhumn115/document-cortex/raw/main/docs/media/document-cortex-demo.mp4).**
+Every shot is the real app: it answers a question about the Transformer paper (2/2 claims supported,
+cited to page 7), a French Wikipedia article and a scanned Hindi book, then shows the held-out
+benchmark (91% vs 82% for plain RAG). Made with [HyperFrames](https://hyperframes.heygen.com);
+music from Apple Loops.
 
 ## Quick start (macOS / Linux)
 
