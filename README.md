@@ -10,6 +10,15 @@ Japanese and Arabic.
 ![flow](https://img.shields.io/badge/ingest-structure%20%E2%86%92%20cards%20%E2%86%92%20index-0f6b5c)
 ![answers](https://img.shields.io/badge/answers-cited%20%2B%20checked-8a5a00)
 
+## Demo (1 minute)
+
+[![Document Cortex demo: an English PDF, a French article and a scanned Hindi book, each answered with checked citations](docs/media/demo-poster.jpg)](docs/media/document-cortex-demo.mp4)
+
+[Watch the demo video](docs/media/document-cortex-demo.mp4) (60 s, MP4). Every shot is the real app:
+it answers a question about the Transformer paper (2/2 claims supported, cited to page 7), a French
+Wikipedia article and a scanned Hindi book, then shows the held-out benchmark (91% vs 82% for plain RAG).
+Made with [HyperFrames](https://hyperframes.heygen.com); music from Apple Loops.
+
 ## Quick start (macOS / Linux)
 
 ```bash
